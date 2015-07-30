@@ -10,6 +10,62 @@ c     with the nek make routines
        write(6,*),"PHIL ROUTINES ARE WORKING"      
       end subroutine ps_Test 
 c-----------------------------------------------------------------------
+      subroutine ps_Dissipation(eps,n)
+c     this subroutine computes (grad U+ grad U^T)^2 at each grid point
+c     *note additional scaling will be required based on dimensional form
+c     of equations
+c
+c     parameters: eps- real array for storing the dissipation
+c                  n - integer for size of eps
+c
+      include 'SIZE'
+      include 'TOTAL'
+      integer n
+      real eps(n)
+c     derivatives of velocity field
+      real dux(lx1,ly1,lz1,lelv),
+     $     duy(lx1,ly1,lz1,lelv),
+     $     duz(lx1,ly1,lz1,lelv),
+     $     dvx(lx1,ly1,lz1,lelv),
+     $     dvy(lx1,ly1,lz1,lelv),
+     $     dvz(lx1,ly1,lz1,lelv),
+     $     dwx(lx1,ly1,lz1,lelv),
+     $     dwy(lx1,ly1,lz1,lelv),
+     $     dwz(lx1,ly1,lz1,lelv),
+     $     work(lx1,ly1,lz1,lelv)
+      integer nv
+c
+      nv=nx1*ny1*nz1*nelv
+      if(n.ne.nv)then
+         write(6,*)"Error in divergence input size",n,nv
+         return
+      endif
+      call rzero(eps,n) ! zero out epsilon
+c   
+c    compute velocity gradients
+      call gradm1(dux,duy,duz,vx,nv)
+      call gradm1(dvx,dvy,dvz,vy,nv)
+      call gradm1(dwx,dwy,dwz,vz,nv)
+c    sum up terms that contribute to dissipation
+      call add2col2(eps,dux,dux,nv) !ux^2
+      call add2col2(eps,dvy,dvy,nv) !vy^2
+      call add2col2(eps,dwz,dwz,nv) !wz^2
+      call add2col2(eps,duy,dvx,nv) 
+      call add2col2(eps,dvz,dwy,nv) 
+      call add2col2(eps,dwx,duz,nv) 
+c   terms above contribute twice
+      call cmult(eps,2.0,nv)
+c   add the rest of the terms
+      call add2col2(eps,duy,duy,nv)
+      call add2col2(eps,duz,duz,nv)
+      call add2col2(eps,dvx,dvx,nv)
+      call add2col2(eps,dvz,dvz,nv)
+      call add2col2(eps,dwx,dwx,nv)
+      call add2col2(eps,dwy,dwy,nv)
+c 
+      return        
+      end subroutine ps_Dissipation
+c-----------------------------------------------------------------------
 c
 c
 c-----------------------------------------------------------------------
