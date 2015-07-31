@@ -349,8 +349,8 @@ c    ********************************************
         if(nid.eq.0)then
           write(filename,"('cyl_coor',I0,'.dat')")iFileNum
           open(unit=50,file=filename)!,status='new')
-          write(50,'(A)') 
-     &       '# time  vx  vy  [vz]  pr  T  PS1  PS2  ...'
+c          write(50,'(A)') 
+c     &       '# time  vx  vy  [vz]  pr  T  PS1  PS2  ...'
         endif
         call nekgsync
 
