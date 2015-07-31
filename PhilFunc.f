@@ -84,7 +84,7 @@ c     ASSUMING LHIS IS MAX NUMBER OF POINTS TO READ IN ON ONE PROCESSOR
       include 'SIZE'
       include 'TOTAL'
 
-      parameter(nfldm=ldim+ldimt+1)
+      parameter(nfldm=2*ldim+ldimt+1)
 
 
       common /c_hptsr/ pts      (ldim,lhis)
@@ -115,7 +115,7 @@ c     ASSUMING LHIS IS MAX NUMBER OF POINTS TO READ IN ON ONE PROCESSOR
 
       if(icalld.eq.0) then
         npts  = lhis      ! number of points per proc
-        call ps_hpts_in(pts,npts,npoints)
+        call ps_hpts_in(pts,npts,npoints) !npts and npoints are blank???
         call intpts_setup(-1.0,inth_hpts) ! use default tolerance
       endif
 
@@ -123,12 +123,13 @@ c     ASSUMING LHIS IS MAX NUMBER OF POINTS TO READ IN ON ONE PROCESSOR
       call prepost_map(0)  ! maps axisymm and pressure
 
       ! pack working array
-      nflds = 0
+      ! modified to dump out corrdinates as well
+      nflds = ndim
       if(ifvo) then
-        call copy(wrk(1,1),vx,ntot)
-        call copy(wrk(1,2),vy,ntot)
-        if(if3d) call copy(wrk(1,3),vz,ntot)
-        nflds = ndim
+        call copy(wrk(1,ndim+1),vx,ntot)
+        call copy(wrk(1,ndim+2),vy,ntot)
+        if(if3d) call copy(wrk(1,ndim+3),vz,ntot)
+        nflds = ndim+ndim
       endif
       if(ifpo) then
         nflds = nflds + 1
@@ -174,9 +175,10 @@ c     ASSUMING LHIS IS MAX NUMBER OF POINTS TO READ IN ON ONE PROCESSOR
         enddo
         icalld = 1
       endif
-
+      if(nflds.ne.nfldm.and.nid.eq.0)write(6,*)"Error nflds ",nflds,
+     $   nfldm
       ! evaluate input field at given points
-      do ifld = 1,nflds
+      do ifld = ndim+1,nflds
          call findpts_eval(inth_hpts,fieldout(ifld,1),nfldm,
      &                     rcode,1,
      &                     proc,1,
@@ -184,8 +186,15 @@ c     ASSUMING LHIS IS MAX NUMBER OF POINTS TO READ IN ON ONE PROCESSOR
      &                     rst,ndim,npts,
      &                     wrk(1,ifld))
       enddo
+      !copy coordinates
+      do i=1,ndim
+        do ii=1,npts
+          fieldout(i,ii)=pts(i,ii)
+        enddo
+      enddo
+      
       ! write interpolation results to file
-      call ps_hpts_out(pts,fieldout,nflds,nfldm,npoints,nbuff)
+      call ps_hpts_out(fieldout,nflds,nfldm,npoints,nbuff)
 
       call prepost_map(1)  ! maps back axisymm arrays
 
@@ -202,6 +211,7 @@ c-----------------------------------------------------------------------
       real    buffer(ldim,nbuf)  
 
       ierr = 0
+c    read in the total number of history points from hpts.in
       if(nid.eq.0) then
         write(6,*) 'reading hpts.in'
         open(50,file='hpts.in',status='old',err=100)
@@ -210,12 +220,14 @@ c-----------------------------------------------------------------------
  100    ierr = 1
  101    continue
       endif
+c   check all processors for an error
       ierr=iglsum(ierr,1)
       if(ierr.gt.0) then
         write(6,*) 'Cannot open hpts.in in subroutine hpts()'
         call exitt
       endif
-      
+c    send total number of points to all processors and 
+c    check to see if there is enough memory allocated      
       call bcast(npoints,isize)
       if(npoints.gt.lhis*np) then
         if(nid.eq.0) write(6,*) 'ABORT: Too many pts to read in hpts()!'
@@ -223,7 +235,7 @@ c-----------------------------------------------------------------------
       endif
       if(nid.eq.0) write(6,*) 'found ', npoints, ' points'
 
-
+c    nbuf=2*lx1*ly1*lz1*lelt
       npass =  npoints/nbuf +1  !number of passes to cover all pts
       n0    =  mod(npoints,nbuf)!remainder 
       if(n0.eq.0) then
@@ -232,9 +244,11 @@ c-----------------------------------------------------------------------
       endif
 
       len = wdsize*ndim*nbuf
+c    put all processors except processor 0 into receive mode
       if (nid.gt.0.and.nid.lt.npass) msg_id=irecv(nid,buffer,len)
       call nekgsync
-      
+c    read in data with processor 0 from hts and send to other
+c    processors      
       npp=0  
       if(nid.eq.0) then
         i1 = nbuf
@@ -269,9 +283,11 @@ c                        npts=local count; npoints=total count
       common /scruz/ mid(lt2)  ! Target proc id
       real    pts(ldim,npts)
 
+c    I think that if this conditional is true the routine
+c    puts all of the points on processor 0 
       if (lt2.gt.npts) then
 
-         call ps_buffer_in(xyz,npp,npoints,lt2)
+         call ps_buffer_in(xyz,npp,npoints,lt2) !lt2 is the size of buffer
          if(npoints.gt.np*npts) then
            if(nid.eq.0)write(6,*)'ABORT in hpts(): npoints > NP*lhis!!' 
            if(nid.eq.0)write(6,*)'Change SIZE: ',np,npts,npoints
@@ -321,14 +337,13 @@ c                        npts=local count; npoints=total count
       return
       end
 c-----------------------------------------------------------------------
-      subroutine ps_hpts_out(pts,fieldout,nflds,nfldm,npoints,nbuff)
+      subroutine ps_hpts_out(fieldout,nflds,nfldm,npoints,nbuff)
 c    ********************************************
 c    *** MODIFIED VERSION OF HPTS_OUT IN REPO****
 c    ********************************************
 
       include 'SIZE'
       include 'TOTAL'
-      real pts(ldim,lhis)
       real buf(nfldm,nbuff),fieldout(nfldm,nbuff)
       character*80 filename
       integer iFileNum
@@ -359,7 +374,7 @@ c     &       '# time  vx  vy  [vz]  pr  T  PS1  PS2  ...'
             call crecv(ipass,buf,len)
             do ip = 1,nbuff
               write(50,'(1p20E15.7)'),
-     &         (pts(i,ip), i=1,ndim),
+c     &         (pts(i,ip), i=1,ndim),
      &         (buf(i,ip), i=1,nflds)
             enddo
           elseif(nid.eq.ipass) then
@@ -371,7 +386,7 @@ c     &       '# time  vx  vy  [vz]  pr  T  PS1  PS2  ...'
           if(nid.eq.0) then
             do ip = 1,il
               write(50,'(1p20E15.7)'),
-     &         (pts(i,ip), i=1,ndim),
+c     &         (pts(i,ip), i=1,ndim),
      &         (fieldout(i,ip), i=1,nflds)
             enddo
           endif
