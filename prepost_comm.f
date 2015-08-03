@@ -301,13 +301,15 @@ c     note, this usage of CTMP1 will be less than elsewhere if NELT ~> 3.
       data ndumps / 0 /
 
       logical ifxyo_s
-
+c  Write to logfile that you're outputting data
       if(nio.eq.0) then 
         WRITE(6,1001) istep,time
  1001   FORMAT(/,i9,1pe12.4,' Write checkpoint:')
       endif
       call nekgsync()      
 
+c  Check for file type
+c  If filetype =6 then use multi-file-output
       p66 = abs(param(66))
       if (p66.eq.6) then
          call mfo_outfld(prefix)
@@ -317,6 +319,7 @@ c     note, this usage of CTMP1 will be less than elsewhere if NELT ~> 3.
 
       ifxyo_s = ifxyo              ! Save ifxyo
 
+c  Check given prefix against the database of prefixes
       iprefix = i_find_prefix(prefix,99)
 
       ierr = 0
@@ -331,9 +334,11 @@ c       Open new file for each dump on /cfs
      $         nopen(iprefix) = mod1(nopen(iprefix),max_rst) ! restart
 
         call file2(nopen(iprefix),prefix)
+c     if file type is 0 or negative then open using statement for ASCII
         if (p66.lt.1.0) then
            open(unit=24,file=fldfle,form='formatted',status='unknown')
         else
+c     open binary file
            call  izero    (fldfilei,33)
            len = ltrunc   (fldfle,131)
            call chcopy    (fldfile2,fldfle,len)
@@ -342,11 +347,13 @@ c          write header as character string
            call blank(fhdfle,132)
         endif
       endif
+c    broadcast if you are dumping the grid
       call bcast(ifxyo,lsize)
+c    check to see if there was an error when byte_open was called
       if(p66.ge.1.0)
      $   call err_chk(ierr,'Error opening file in outfld. Abort. $')
 
-C     Figure out what goes in EXCODE
+C     Figure out what goes in EXCODE (header)
       CALL BLANK(EXCODE,30)
       NDUMPS=NDUMPS+1
       i=1
@@ -422,19 +429,25 @@ C     Dump header
       if (nid.eq.0) call dump_header(excode,p66,ierr)
       call err_chk(ierr,'Error dumping header in outfld. Abort. $')
 
+c   Get number of fields to write to file (xyzuvwpTt1 etc)
       call get_id(id)
 
+c  Number of points in each element
       nxyz  = nx1*ny1*nz1
 
       ierr = 0
+
+c  Loop over each element
       do ieg=1,nelgt
 
-         jnid = gllnid(ieg)
+         jnid = gllnid(ieg) !
          ie   = gllel (ieg)
 
          if (nid.eq.0) then
+c           if the cell your looking for is in processor zero fill tdump
             if (jnid.eq.0) then
                call fill_tmp(tdump,id,ie)
+c           else send request to the processor where it is located
             else
                mtype=2000+ieg
                len=4*id*nxyz
@@ -442,7 +455,10 @@ C     Dump header
                call csend (mtype,dum1,wdsize,jnid,nullpid)
                call crecv (mtype,tdump,len)
             endif
+c           if there were no problems write data to file            
             if(ierr.eq.0) call out_tmp(id,p66,ierr)
+c       processor containg data receive request from processor 0 
+c       and then send data to processor 0
          elseif (nid.eq.jnid) then
             call fill_tmp(tdump,id,ie)
             dum1=0.
