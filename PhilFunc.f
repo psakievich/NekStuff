@@ -10,6 +10,84 @@ c     with the nek make routines
        write(6,*),"PHIL ROUTINES ARE WORKING"      
       end subroutine ps_Test 
 c-----------------------------------------------------------------------
+      subroutine ps_T_Diss(psi)
+c     this subroutine computes the thermal dissipation grad T:grad T at each
+c     grid point
+c
+c     
+      include 'SIZE'
+      include 'TOTAL'
+c    
+      integer psi !which passive scalar to use to store variable
+      real dTx(lx1,ly1,lz1,lelt),
+     $     dTy(lx1,ly1,lz1,lelt),
+     $     dTz(lx1,ly1,lz1,lelt)
+c
+      nt=nx1*ny1*nz1*nelt
+c     compute gradients
+      call gradm1(dTx,dTy,dTz,T(1,1,1,1,1))
+c
+c     zero out the passive scalar
+      call rzero(T(1,1,1,1,psi),nt)
+c
+c     
+      call add2col2(T(1,1,1,1,psi),dTx,dTx,nt)
+      call add2col2(T(1,1,1,1,psi),dTy,dTy,nt)
+      call add2col2(T(1,1,1,1,psi),dTz,dTz,nt)
+      return
+      end subroutine ps_T_Diss
+c-----------------------------------------------------------------------
+      subroutine ps_KE_Diss(psi)
+c     this subroutine computes (grad U+ grad U^T)^2 at each grid point
+c     *note additional scaling will be required based on dimensional form
+c     of equations and puts dissipation in passive scalar #psi
+c
+c
+      include 'SIZE'
+      include 'TOTAL'
+      integer psi
+c     derivatives of velocity field
+      real ddux(lx1,ly1,lz1,lelt),
+     $     dduy(lx1,ly1,lz1,lelt),
+     $     dduz(lx1,ly1,lz1,lelt),
+     $     ddvx(lx1,ly1,lz1,lelt),
+     $     ddvy(lx1,ly1,lz1,lelt),
+     $     ddvz(lx1,ly1,lz1,lelt),
+     $     ddwx(lx1,ly1,lz1,lelt),
+     $     ddwy(lx1,ly1,lz1,lelt),
+     $     ddwz(lx1,ly1,lz1,lelt),
+     $     work(lx1,ly1,lz1,lelt)
+      integer nv
+c
+      nv=nx1*ny1*nz1*nelv
+      nt=nx1*ny1*nz1*nelt
+      call rzero(T(1,1,1,1,psi),nt) ! zero out epsilon
+c   
+c    compute velocity gradients
+      call gradm1(ddux,dduy,dduz,vx)
+      call gradm1(ddvx,ddvy,ddvz,vy)
+      call gradm1(ddwx,ddwy,ddwz,vz)
+c    sum up terms that contribute to dissipation
+      call add2col2(T(1,1,1,1,psi),ddux,ddux,nt) !ux^2
+      call add2col2(T(1,1,1,1,psi),ddvy,ddvy,nt) !vy^2
+      call add2col2(T(1,1,1,1,psi),ddwz,ddwz,nt) !wz^2
+      call add2col2(T(1,1,1,1,psi),dduy,ddvx,nt) 
+      call add2col2(T(1,1,1,1,psi),ddvz,ddwy,nt) 
+      call add2col2(T(1,1,1,1,psi),ddwx,dduz,nt) 
+c   terms above contribute twice
+      call cmult(T(1,1,1,1,psi),2.0,nt)
+c   add the rest of the terms
+      call add2col2(T(1,1,1,1,psi),dduy,dduy,nt)
+      call add2col2(T(1,1,1,1,psi),dduz,dduz,nt)
+      call add2col2(T(1,1,1,1,psi),ddvx,ddvx,nt)
+      call add2col2(T(1,1,1,1,psi),ddvz,ddvz,nt)
+      call add2col2(T(1,1,1,1,psi),ddwx,ddwx,nt)
+      call add2col2(T(1,1,1,1,psi),ddwy,ddwy,nt)
+c 
+c      call rzero(T(1,1,1,1,psi),nt) ! zero out epsilon
+      return        
+      end subroutine ps_KE_Diss
+c-----------------------------------------------------------------------
       subroutine ps_Dissipation(eps,n)
 c     this subroutine computes (grad U+ grad U^T)^2 at each grid point
 c     *note additional scaling will be required based on dimensional form

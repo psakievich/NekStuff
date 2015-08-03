@@ -1,0 +1,308 @@
+c-----------------------------------------------------------------------
+c-----------------------------------------------------------------------
+      subroutine uservp (ix,iy,iz,ieg)
+      include 'SIZE'
+      include 'TOTAL'
+      include 'NEKUSE'
+C
+      udiff =0.
+      utrans=0.
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine userf  (ix,iy,iz,ieg)
+c
+c this sub was taken from high_ray.usr-ps 10/23/2013
+c
+      include 'SIZE'
+      include 'TOTAL'
+      include 'NEKUSE'
+
+      common /rayleigh_r/ rapr,ta2pr
+      integer elocal
+
+      stime  = 1.e1
+      argt   = -time/stime
+      scalet = 1-exp(argt)
+c
+c   ifield=2 refers temp as T(i,1,1,1,1) i.e. temperature
+c      if(ifield.eq.2)then
+c      buoy = temp*scalet
+      elocal=gllel(ieg)
+      buoy=t(ix,iy,iz,elocal,1)*scalet
+c      endif
+
+      if (if3d) then
+         ffx  = 0.
+         ffy  = 0.
+         ffz  = buoy
+      elseif (ifaxis) then
+         ffx  = -buoy
+         ffy  =  0.
+      else
+         ffx  = 0.
+         ffy  = buoy
+      endif
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine userq  (ix,iy,iz,ieg)
+      include 'SIZE'
+      include 'TOTAL'
+      include 'NEKUSE'
+C
+      qvol   = 0.0
+      source = 0.0
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine userchk    ! called once per step
+c
+c this sub was taken from high_ray.usr-ps 10/24/2013
+c
+      include 'SIZE'
+      include 'TOTAL'
+
+      common /rayleigh_r/ rapr,ta2pr
+      common /rayleigh_c/ Ra,Ra1,Ra2,Ra3,Prnum,Ta2,Ek1,Ek2,Ek3,ck
+
+      real Ek0,Ek,t12,t23
+      real uBar, vBar, wBar, dissBar
+      real tempMax, tempMin
+
+      real nussnum, DTemp,Qo,Ht,kv,alph,g,kappa
+      real VelC,VelD,TempC,TempD,TimeC,TimeD,PressC,PressD
+      save Ek0,Ek,t12,t23
+
+      ifxyo = .true.  ! For VisIt
+c      if (istep.gt.iostep) ifxyo = .false.
+
+      ra = 1.e5
+      prnum   = 6.7    
+      
+      param(2)=1.0/sqrt(ra/prnum)
+      param(8)=1.0/sqrt(ra*prnum)
+      
+      rapr    = ra*prnum
+      ta2pr   = ta2*prnum
+
+      n    = nx1*ny1*nz1*nelv
+      nt   = nx1*ny1*nz1*nelt
+c      call ps_Test
+c      call ps_hpts
+c      call hpts
+      call ps_KE_Diss(2)
+      call ps_T_Diss(3)
+c      call exitt
+
+      Ek0  = Ek
+      Ekx  = 0.5*glsc3(vx,vx,bm1,n)/volvm1
+      Eky  = 0.5*glsc3(vy,vy,bm1,n)/volvm1
+      Ekz  = 0.5*glsc3(vz,vz,bm1,n)/volvm1
+      Ek=0.5*(glsc3(vx,vx,bm1,n)+glsc3(vy,vy,bm1,n)+
+     $ glsc3(vz,vz,bm1,n))/volvm1
+   
+      uBar=glsc3(vx,vx,bm1,n)
+      vBar=glsc3(vy,vy,bm1,n)
+      wBar=glsc3(vz,vz,bm1,n)
+      disBar=glsc2(T(1,1,1,1,2),bm1,n)/volvm1
+
+      uBar=uBar/volvm1
+      vBar=vBar/volvm1
+      wBar=wBar/volvm1
+
+      sigma = 1.e-4
+      de    = abs(Ek-Ek0)/dt
+      if(mod(istep,10).eq.0.or.istep.lt.100)then
+         tempMax=glamax(t,nt)
+         tempMin=glamin(t,nt)
+      endif
+
+      if (nid.eq.0.and.(mod(istep,10).eq.0.or.istep.lt.100))then
+        write(6,6) istep,time,Ek,de,disBar
+        write(6,7) istep,time,uBar,vBar,wBar
+        write(6,8) istep,time,tempMin,tempMax
+c        call Nusselt
+      endif
+      
+c      call avg_all
+
+    6 format(i7,1p4e13.5,' ekde')
+    7 format(i7,1p4e13.5,' velbar')
+    8 format(i7,1p3e13.5,' trange')
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine userbc (ix,iy,iz,iside,ieg)
+c
+c this sub was taken from high_ray.usr-ps 10/23/2013
+c
+      include 'SIZE'
+      include 'TSTEP'
+      include 'INPUT'
+      include 'NEKUSE'
+      common /rayleigh_r/ rapr,ta2pr
+
+      ux=0.
+      uy=0.
+      uz=0.
+
+      temp=0.  !     Temp = -0.5 on top, 0.5 on bottom
+      if(ifield.eq.2)then
+      if (if3d) then
+         temp = 0.-z
+      elseif (ifaxis) then  !      domain is on interval x in [-1,0]
+         temp = 1.+x
+      else                  ! 2D:  domain is on interval y in [0,1]
+         temp = 1.-y
+      endif
+      endif
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine useric (i,j,k,eg)
+c
+c this sub was taken from high_ray.usr-ps 10/23/2013
+c still need to change for 3-d case -ps 10/23/2013
+c
+      include 'SIZE'
+      include 'TOTAL'
+      include 'NEKUSE'
+      integer idum
+      save    idum
+      data    idum /99/
+
+      ran = 2.e7*(ieg+x*sin(y)) + 1.e6*ix*iy + 1.e7*ix 
+      ran = 1.e9*sin(ran)
+      ran = 1.e9*sin(ran)
+      ran = cos(ran)
+      ran = ran1(idum)
+      amp = .005
+      if(ifield.eq.2)then
+      if(if3d) then
+         temp = (0.0-z)+ran*amp*(0.0-z)*z*(x*x+y*y)**0.5
+      else
+         temp = 1-y + ran*amp*(1-y)*y*x  ! 2D 
+      endif
+      else
+         temp=0.
+      endif
+
+      ux=0.
+      uy=0.
+      uz=0.
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine usrdat3
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine usrdat
+      include 'SIZE'
+      include 'TOTAL'
+
+cc     Force exterior points to unit circle in working precision
+cc
+c      e1 = 6.3
+c      e1 = e1 - 1.e-4
+c      do ie=1,nelt
+c      do i=1,8
+c        rr = xc(i,ie)*xc(i,ie) + yc(i,ie)*yc(i,ie)
+c        if (rr.gt.e1) then
+c           rr = sqrt(rr)
+c           rn = e1/rr
+c           xc(i,ie) = rn*xc(i,ie)
+c           yc(i,ie) = rn*yc(i,ie)
+cc          write(6,1) ie,i,rn,xc(i,ie),yc(i,ie),' rnew'
+c        endif
+c      enddo
+c      enddo
+cc    1 format(2i5,1p3e18.9,a5)
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine usrdat2
+c
+c  modified to just scale diameter and height-ps 10/23/2013
+c  add in rb values                          -ps 10/23/2013
+      include 'SIZE'
+      include 'TOTAL'
+      common /ogeom/ ox(lx1,ly1,lz1,lelv)
+     $             , oy(lx1,ly1,lz1,lelv)
+
+      common /rayleigh_c/ Ra,Ra1,Ra2,Ra3,Prnum,Ta2,Ek1,Ek2,Ek3,ck
+
+      param(66) = 6
+      param(67) = 6
+      ta2=param(77)
+
+       diam=1.0
+       pitch=1.0
+       z0=-0.5
+       z1=0.5
+       call rescale_x(zm1,z0,z1)
+
+       rad=diam/2.
+       radm=-rad
+       call rescale_x(xm1,radm,rad)
+       call rescale_x(ym1,radm,rad)
+
+      ifxyo     = .true.
+
+      return
+      end
+cc-----------------------------------------------------------------------
+c******************************************************************************
+      subroutine Nusselt()
+c     This subroutine calculates the nusselt number of the top and bottom plates
+c
+c
+      include 'SIZE'
+      include 'TOTAL'
+      
+       common /mystuff/ tx(lx1,ly1,lz1,lelt)
+     $                , ty(lx1,ly1,lz1,lelt)
+     $                , tz(lx1,ly1,lz1,lelt)
+
+      integer e,f
+      nface = 2*ndim
+
+      a = 0.
+      s = 0.
+
+      call gradm1(tx,ty,tz,t) ! grad T
+
+      do e=1,nelv
+        do f=1,nface
+        if (cbc(f,e,2).eq.'t  ') then
+           call facind(i0,i1,j0,j1,k0,k1,nx1,ny1,nz1,f)
+           l=0
+           do k=k0,k1 ! March over face f
+             do j=j0,j1
+              do i=i0,i1
+                l = l + 1
+c                s = s + (unx(l,1,f,e)*tx(i,j,k,e)
+c     $                 + uny(l,1,f,e)*ty(i,j,k,e)
+c     $  + unz(l,1,f,e)*tz(i,j,k,e))*area(l,1,f,e)
+                s = s + tz(i,j,k,e)
+     $                            *area(l,1,f,e)
+                a = a + area(l,1,f,e)
+              enddo
+             enddo
+           enddo
+          endif 
+        enddo
+      enddo
+      a=glsum(a,1)
+      ! Sum across processors
+      s=glsum(s,1)
+      abar = s/a
+      if (nid.eq.0)then
+          write(6,*),"Nuss",time,s,abar
+      endif
+      return
+      end 
