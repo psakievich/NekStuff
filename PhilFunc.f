@@ -147,7 +147,7 @@ c-----------------------------------------------------------------------
 c
 c
 c-----------------------------------------------------------------------
-      subroutine ps_hpts
+      subroutine ps_hpts(prefix)
 c    ********************************************
 c    ***** MODIFIED VERSION OF HPTS IN REPO******
 c    ********************************************
@@ -175,6 +175,7 @@ c     ASSUMING LHIS IS MAX NUMBER OF POINTS TO READ IN ON ONE PROCESSOR
 
       common /scrcg/  pm1 (lx1,ly1,lz1,lelv) ! mapped pressure
       common /outtmp/ wrk (lx1*ly1*lz1*lelt,nfldm)
+      character*3    prefix
 
       logical iffind
 
@@ -273,7 +274,7 @@ c     ASSUMING LHIS IS MAX NUMBER OF POINTS TO READ IN ON ONE PROCESSOR
       
       ! write interpolation results to file
 c      call ps_hpts_out(fieldout,nflds,nfldm,npoints,nbuff)
-      call ps_hpts_out_fld("CAR",fieldout,nflds,nfldm,
+      call ps_hpts_out_fld(prefix,fieldout,nflds,nfldm,
      $                                npoints,nbuff)
 
       call prepost_map(1)  ! maps back axisymm arrays
@@ -311,6 +312,10 @@ c   check all processors for an error
 c    send total number of points to all processors and 
 c    check to see if there is enough memory allocated      
       call bcast(npoints,isize)
+      call bcast(nelgh,isize)
+      call bcast(nxh,isize)
+      call bcast(nyh,isize)
+      call bcast(nzh,isize)
       if(npoints.gt.lhis*np) then
         if(nid.eq.0) write(6,*) 'ABORT: Too many pts to read in hpts()!'
         call exitt
@@ -376,8 +381,9 @@ c    puts all of the points on processor 0
            if(nid.eq.0)write(6,*)'Change SIZE: ',np,npts,npoints
            call exitt
          endif
-         if(npoints.ne.NELGH*NXH*NYH*NZY)then
+         if(npoints.ne.NELGH*NXH*NYH*NZH)then
            if(nid.eq.0)write(6,*)'HPNTS dosnt match the given dims'
+     $                     ,npoints,NELGH*NXH*NYH*NZH
            call exitt
          endif
              
@@ -735,7 +741,7 @@ c     Dump out hpts in terms of elements
                 tbuf(ncount,i)=buf(i,ip) 
               enddo
               ncount=ncount+1
-              if(ncount.eq.hxyz)then
+              if(ncount-1.eq.hxyz)then
                  call ps_out_buff(id,p66,ierr)
                  ncount=1
               endif
@@ -755,7 +761,7 @@ c     &         (tbuf(i), i=1,nflds)
                tbuf(ncount,i)=fieldout(i,ip)
               enddo
               ncount=ncount+1
-              if(ncount.eq.hxyz)then
+              if(ncount-1.eq.hxyz)then
                  call ps_out_buff(id,p66,ierr)
                  ncount=1
               endif
