@@ -394,23 +394,23 @@ C     Figure out what goes in EXCODE (header)
          enddo
       else
          !new header format
-         IF (IFXYO) THEN
+         IF (IFXYO) THEN !dumping grid information
             EXCODE(i)='X'
             i = i + 1
          ENDIF
-         IF (IFVO) THEN
+         IF (IFVO) THEN !dumping velocity information
             EXCODE(i)='U'
             i = i + 1
          ENDIF
-         IF (IFPO) THEN
+         IF (IFPO) THEN !dumping pressure information
             EXCODE(i)='P'
             i = i + 1
          ENDIF
-         IF (IFTO) THEN
+         IF (IFTO) THEN !dumping Temperature information
             EXCODE(i)='T'
             i = i + 1
          ENDIF
-         IF (LDIMT.GT.1) THEN
+         IF (LDIMT.GT.1) THEN !dumping passive scalar information
             NPSCALO = 0
             do k = 1,ldimt-1
               if(ifpsco(k)) NPSCALO = NPSCALO + 1
@@ -438,15 +438,15 @@ c  Number of points in each element
       ierr = 0
 
 c  Loop over each element
-      do ieg=1,nelgt
+      do ieg=1,nelgt !global number of elements
 
-         jnid = gllnid(ieg) !
-         ie   = gllel (ieg)
+         jnid = gllnid(ieg) !get processor id for element ieg
+         ie   = gllel (ieg) !get local id for element ieg
 
          if (nid.eq.0) then
 c           if the cell your looking for is in processor zero fill tdump
             if (jnid.eq.0) then
-               call fill_tmp(tdump,id,ie)
+               call fill_tmp(tdump,id,ie) !(storage array,return number of fields being written, element)
 c           else send request to the processor where it is located
             else
                mtype=2000+ieg

@@ -272,9 +272,7 @@ c     ASSUMING LHIS IS MAX NUMBER OF POINTS TO READ IN ON ONE PROCESSOR
       enddo
       
       ! write interpolation results to file
-c      call ps_hpts_out(fieldout,nflds,nfldm,npoints,nbuff)
-      call ps_hpts_out_fld("CAR",fieldout,nflds,nfldm,
-     $                                npoints,nbuff)
+      call ps_hpts_out(fieldout,nflds,nfldm,npoints,nbuff)
 
       call prepost_map(1)  ! maps back axisymm arrays
 
@@ -294,8 +292,8 @@ c-----------------------------------------------------------------------
       ierr = 0
 c    read in the total number of history points from hpts.in
       if(nid.eq.0) then
-        write(6,*) 'reading ps_hpts.in'
-        open(50,file='ps_hpts.in',status='old',err=100)
+        write(6,*) 'reading hpts.in'
+        open(50,file='hpts.in',status='old',err=100)
         read(50,*,err=100) npoints,NELGH,NXH,NYH,NZH
         goto 101
  100    ierr = 1
@@ -304,8 +302,7 @@ c    read in the total number of history points from hpts.in
 c   check all processors for an error
       ierr=iglsum(ierr,1)
       if(ierr.gt.0) then
-        write(6,*) 'Cannot open ps_hpts.in in 
-     $                    subroutine hpts()'
+        write(6,*) 'Cannot open hpts.in in subroutine hpts()'
         call exitt
       endif
 c    send total number of points to all processors and 
@@ -376,11 +373,7 @@ c    puts all of the points on processor 0
            if(nid.eq.0)write(6,*)'Change SIZE: ',np,npts,npoints
            call exitt
          endif
-         if(npoints.ne.NELGH*NXH*NYH*NZY)then
-           if(nid.eq.0)write(6,*)'HPNTS dosnt match the given dims'
-           call exitt
-         endif
-             
+
          npmax = (npoints/npts)
          if(mod(npoints,npts).eq.0) npmax=npmax+1
 
@@ -548,13 +541,16 @@ c
 c     note, this usage of CTMP1 will be less than elsewhere if NELT ~> 3.
       parameter (lxyz=lx1*ly1*lz1)
       parameter (lpsc9=ldimt1+9)
-      common /cbuff1/ tbuf(lxyz,lpsc9)
-      real*4         tbuf
+      common /ctmp1/ tdump(lxyz,lpsc9)
+      real buf(nfldm,nbuff),fieldout(nfldm,nbuff)!from hpts_out
+      len = wdsize*nfldm*nbuff !from hpts_out
+      real*4         tdump
+      real           tdmp(4)
+      equivalence   (tdump,tdmp)
 
       real*4         test_pattern
 
       character*3    prefix
-      real buf(nfldm,nbuff),fieldout(nfldm,nbuff)!from hpts_out
       character*1    fhdfle1(132)
       character*132   fhdfle
       equivalence   (fhdfle,fhdfle1)
@@ -571,9 +567,9 @@ c     note, this usage of CTMP1 will be less than elsewhere if NELT ~> 3.
       data ndumps / 0 /
 
       logical ifxyo_s
-      integer hxyz,ncount
-      len = wdsize*nfldm*nbuff!from hpts_out
-      hxyz=nxh*nyh*nzh
+
+      len = wdsize*nfldm*nbuff
+
 
       npass = npoints/nbuff + 1
       il = mod(npoints,nbuff)
@@ -592,11 +588,11 @@ c  Write to logfile that you're outputting data
 c  Check for file type
 c  If filetype =6 then use multi-file-output
       p66 = abs(param(66))
-c      if (p66.eq.6) then
-c         call mfo_outfld(prefix)
-c         call nekgsync                ! avoid race condition w/ outfld
-c         return
-c      endif
+      if (p66.eq.6) then
+         call mfo_outfld(prefix)
+         call nekgsync                ! avoid race condition w/ outfld
+         return
+      endif
 
       ifxyo_s = ifxyo              ! Save ifxyo
 
@@ -714,62 +710,20 @@ c     Begining from hpts_out set up amount to pass
          il = nbuff
          npass = npass-1
       endif
-C     Dump header based on phil files
+C     Dump header
       ierr = 0
-      if (nid.eq.0) call ps_dump_header(excode,p66,ierr)
+      if (nid.eq.0) call dump_header(excode,p66,ierr)
       call err_chk(ierr,'Error dumping header in outfld. Abort. $')
 
 c   Get number of fields to write to file (xyzuvwpTt1 etc)
       call get_id(id)
 
+c  Number of points in each element
+      nxyz  = nx1*ny1*nz1
+
       ierr = 0
-      ncount=1
 c     Dump out hpts in terms of elements
-      do ipass = 1,npass
 
-        if(ipass.lt.npass) then
-          if(nid.eq.0) then
-            call crecv(ipass,buf,len)
-            do ip = 1,nbuff
-              do i=1,nflds
-                tbuf(ncount,i)=buf(i,ip) 
-              enddo
-              ncount=ncount+1
-              if(ncount.eq.hxyz)then
-                 call ps_out_buff(id,p66,ierr)
-                 ncount=1
-              endif
-c              write(24,*),' '
-c              write(24,'(1p20E14.6)'),
-c     &         (tbuf(i), i=1,nflds)
-            enddo
-          elseif(nid.eq.ipass) then
-            call csend(ipass,fieldout,len,0,nid)
-          endif
-
-        else  !ipass.eq.npass
-
-          if(nid.eq.0) then
-            do ip = 1,il
-              do i=1,nflds
-               tbuf(ncount,i)=fieldout(i,ip)
-              enddo
-              ncount=ncount+1
-              if(ncount.eq.hxyz)then
-                 call ps_out_buff(id,p66,ierr)
-                 ncount=1
-              endif
-c              call ps_out_buff(id,p66,ierr)
-c              write(24,*),' '
-c              write(24,*),id,nflds
-c              write(24,'(1p20E14.6)'),
-c     &         (tbuf(i), i=1,nflds)
-            enddo
-          endif
-
-        endif
-      enddo
-      call nekgsync
 
       call err_chk(ierr,'Error writing file in outfld. Abort. $')
 
@@ -860,21 +814,21 @@ C       write byte-ordering test pattern to byte file...
       end
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
-      subroutine ps_out_buff(id,p66,ierr)
+      subroutine ps_out_tmp(id,p66,ierr)
 
       include 'SIZE'
       include 'TOTAL'
 
-      parameter (lpsc9=ldimt1+9)
       parameter (lxyz=lx1*ly1*lz1)
+      parameter (lpsc9=ldimt1+9)
 
-      common /cbuff1/ tbuf(lxyz,lpsc9)
-      common/hpts_to_elm/NELGH,NXH,NYH,NZH
-      real*4         tbuf
+      common /ctmp1/ tdump(lxyz,lpsc9)
+      real*4         tdump
 
       character*11 frmat
-      nxyz=NXH*NYH*NZH
-      
+
+      nxyz = nx1*ny1*nz1
+
       call blank(frmat,11)
       if (id.le.9) then
          WRITE(FRMAT,1801) ID
@@ -887,12 +841,11 @@ c-----------------------------------------------------------------------
       if (p66.lt.1.0) then
 C       formatted i/o
         WRITE(24,FRMAT)
-     $      ((TBUF(I,II),II=1,ID),I=1,nxyz)
+     $      ((TDUMP(I,II),II=1,ID),I=1,NXYZ)
       else
 C        C binary i/o
          do ii=1,id
-c            call byte_reverse(tbuf,id,ierr)
-            call byte_write(tbuf(1,ii),nxyz,ierr)
+            call byte_write(tdump(1,ii),nxyz,ierr)
             if(ierr.ne.0) goto 101
          enddo
       endif
