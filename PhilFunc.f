@@ -273,9 +273,9 @@ c     ASSUMING LHIS IS MAX NUMBER OF POINTS TO READ IN ON ONE PROCESSOR
       enddo
       
       ! write interpolation results to file
-      call ps_hpts_out(fieldout,nflds,nfldm,npoints,nbuff)
-c      call ps_hpts_out_fld(prefix,fieldout,nflds,nfldm,
-c     $                                npoints,nbuff)
+c      call ps_hpts_out(fieldout,nflds,nfldm,npoints,nbuff)
+      call ps_hpts_out_fld(prefix,fieldout,nflds,nfldm,
+     $                                npoints,nbuff)
 
       call prepost_map(1)  ! maps back axisymm arrays
 
@@ -447,7 +447,6 @@ c    ********************************************
       
       len = wdsize*nfldm*nbuff
 
-
       npass = npoints/nbuff + 1
       il = mod(npoints,nbuff)
       if(il.eq.0) then
@@ -554,8 +553,9 @@ c
 c     note, this usage of CTMP1 will be less than elsewhere if NELT ~> 3.
       parameter (lxyz=lx1*ly1*lz1)
       parameter (lpsc9=ldimt1+9)
-      common /cbuff1/ tbuf(lxyz,lpsc9)
-      real*4         tbuf
+c      parameter (lxyz=NXH*NYH*NZH)
+c      common /cbuff1/ tbuf(lxyz,lpsc9)
+      real*4         tbuf(NXH*NYH*NZH,lpsc9)
 
       real*4         test_pattern
 
@@ -577,10 +577,9 @@ c     note, this usage of CTMP1 will be less than elsewhere if NELT ~> 3.
       data ndumps / 0 /
 
       logical ifxyo_s
-      integer hxyz,ncount
+      integer ncount,hxyz
+      hxyz=NXH*NYH*NZH
       len = wdsize*nfldm*nbuff!from hpts_out
-      hxyz=nxh*nyh*nzh
-
       npass = npoints/nbuff + 1
       il = mod(npoints,nbuff)
       if(il.eq.0) then
@@ -627,8 +626,8 @@ c     if file type is 0 or negative then open using statement for ASCII
         else
 c     open binary file
            call  izero    (fldfilei,33)
-           len = ltrunc   (fldfle,131)
-           call chcopy    (fldfile2,fldfle,len)
+           len1 = ltrunc   (fldfle,131)
+           call chcopy    (fldfile2,fldfle,len1)
            call byte_open (fldfile2,ierr)
 c          write header as character string
            call blank(fhdfle,132)
@@ -714,12 +713,12 @@ c^^^^^^^^^^^^^^^^^^^^^^No changes necessary^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 c !!!!!!!!!!!!!!!!!!!!!Begin Changes!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 c
 c     Begining from hpts_out set up amount to pass
-      npass = npoints/nbuff + 1
-      il = mod(npoints,nbuff)
-      if(il.eq.0) then
-         il = nbuff
-         npass = npass-1
-      endif
+c      npass = npoints/nbuff + 1
+c      il = mod(npoints,nbuff)
+c      if(il.eq.0) then
+c         il = nbuff
+c         npass = npass-1
+c      endif
 C     Dump header based on phil files
       ierr = 0
       if (nid.eq.0) call ps_dump_header(excode,p66,ierr)
@@ -731,6 +730,7 @@ c   Get number of fields to write to file (xyzuvwpTt1 etc)
       ierr = 0
       ncount=1
 c     Dump out hpts in terms of elements
+      call nekgsync
       do ipass = 1,npass
 
         if(ipass.lt.npass) then
@@ -741,8 +741,9 @@ c     Dump out hpts in terms of elements
                 tbuf(ncount,i)=buf(i,ip) 
               enddo
               ncount=ncount+1
+c              if(ncount-1.eq.lxyz.or.ip.eq.nbuff)then
               if(ncount-1.eq.hxyz)then
-                 call ps_out_buff(id,p66,ierr)
+                 call ps_out_buff(id,p66,tbuf,ierr)
                  ncount=1
               endif
             enddo
@@ -758,8 +759,10 @@ c     Dump out hpts in terms of elements
                tbuf(ncount,i)=fieldout(i,ip)
               enddo
               ncount=ncount+1
+c              if(ncount-1.eq.lxyz.or.ip.eq.il)then
               if(ncount-1.eq.hxyz)then
-                 call ps_out_buff(id,p66,ierr)
+c                 call ps_out_buff(id,p66,ncount-1,ierr)
+                 call ps_out_buff(id,p66,tbuf,ierr)
                  ncount=1
               endif
             enddo
@@ -805,7 +808,7 @@ c-----------------------------------------------------------------------
       enddo
 
       call blank(fhdfle,132)
-
+      
 c       write(6,111)               !       print on screen
 c     $     nelgt,nx1,ny1,nz1,time,istep,excode
 c
@@ -858,21 +861,20 @@ C       write byte-ordering test pattern to byte file...
       end
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
-      subroutine ps_out_buff(id,p66,ierr)
+      subroutine ps_out_buff(id,p66,tbuf,ierr)
 
       include 'SIZE'
       include 'TOTAL'
 
+      common/hpts_to_elm/NELGH,NXH,NYH,NZH
       parameter (lpsc9=ldimt1+9)
       parameter (lxyz=lx1*ly1*lz1)
-
-      common /cbuff1/ tbuf(lxyz,lpsc9)
-      common/hpts_to_elm/NELGH,NXH,NYH,NZH
-      real*4         tbuf
-
+c      common /cbuff1/ tbuf(lxyz,lpsc9)
+      real*4         tbuf(NXH*NYH*NXH,lpsc9)
+      integer nxyz
       character*11 frmat
-      nxyz=NXH*NYH*NZH
       
+      nxyz=NXH*NYH*NZH
       call blank(frmat,11)
       if (id.le.9) then
          WRITE(FRMAT,1801) ID
