@@ -273,9 +273,9 @@ c     ASSUMING LHIS IS MAX NUMBER OF POINTS TO READ IN ON ONE PROCESSOR
       enddo
       
       ! write interpolation results to file
-c      call ps_hpts_out(fieldout,nflds,nfldm,npoints,nbuff)
-      call ps_hpts_out_fld(prefix,fieldout,nflds,nfldm,
-     $                                npoints,nbuff)
+      call ps_hpts_out(fieldout,nflds,nfldm,npoints,nbuff)
+c      call ps_hpts_out_fld(prefix,fieldout,nflds,nfldm,
+c     $                                npoints,nbuff)
 
       call prepost_map(1)  ! maps back axisymm arrays
 
@@ -492,7 +492,6 @@ c    ********************************************
          enddo
  
 
-      do ipass = 1,npass
         if(nid.eq.0)then
           write(filename,"('udfpnts.fld',I2.2)")iFileNum+1
           open(unit=50,file=filename)!,status='new')
@@ -504,12 +503,13 @@ c    ********************************************
 
         endif
         call nekgsync
+      do ipass = 1,npass
 
         if(ipass.lt.npass) then
           if(nid.eq.0) then
             call crecv(ipass,buf,len)
             do ip = 1,nbuff
-              write(50,'(1p20E15.7)'),
+              write(50,'(1p20E14.6)'),
 c     &         (pts(i,ip), i=1,ndim),
      &         (buf(i,ip), i=1,nflds)
             enddo
@@ -745,9 +745,6 @@ c     Dump out hpts in terms of elements
                  call ps_out_buff(id,p66,ierr)
                  ncount=1
               endif
-c              write(24,*),' '
-c              write(24,'(1p20E14.6)'),
-c     &         (tbuf(i), i=1,nflds)
             enddo
           elseif(nid.eq.ipass) then
             call csend(ipass,fieldout,len,0,nid)
@@ -765,11 +762,6 @@ c     &         (tbuf(i), i=1,nflds)
                  call ps_out_buff(id,p66,ierr)
                  ncount=1
               endif
-c              call ps_out_buff(id,p66,ierr)
-c              write(24,*),' '
-c              write(24,*),id,nflds
-c              write(24,'(1p20E14.6)'),
-c     &         (tbuf(i), i=1,nflds)
             enddo
           endif
 
