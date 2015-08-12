@@ -10,6 +10,70 @@ c     with the nek make routines
        write(6,*),"PHIL ROUTINES ARE WORKING"      
       end subroutine ps_Test 
 c-----------------------------------------------------------------------
+      subroutine ps_GridSpacing(gMin,gMax,gMean)
+c
+c    This routine finds and returns the global min max and mean grid spacing
+c
+      include 'SIZE'
+      include 'TOTAL'
+      real gMin(ndim), gMax(ndim), gMean(ndim)
+c
+      real lMin(ndim), lMax(ndim), lMean(ndim)
+      real dX(lx1-1),dY(lx1-1),dZ(lx1-1)
+      integer ncount,lcount;
+
+      lMin=10000.;
+      lMax=0;
+      lMean=0;
+      lcount=0;
+
+c     find the mean for each processor
+      do i=1,nelv
+          do j=2,lx1
+c             x spacing
+              dX(j-1)=sqrt((xm1(j,1,1,i)-xm1(j-1,1,1,i))**2+
+     $                     (ym1(j,1,1,i)-ym1(j-1,1,1,i))**2+
+     $                     (zm1(j,1,1,i)-zm1(j-1,1,1,i))**2)
+              if(dX(j-1).gt.lMax(1))lMax(1)=dX(j-1)
+              if(dX(j-1).lt.lMin(1))lMin(1)=dX(j-1)
+              lMean(1)=lMean(1)+dX(j-1)
+c             y spacing
+              dY(j-1)=sqrt((xm1(1,j,1,i)-xm1(1,j-1,1,i))**2+
+     $                     (ym1(1,j,1,i)-ym1(1,j-1,1,i))**2+
+     $                     (zm1(1,j,1,i)-zm1(1,j-1,1,i))**2)
+              if(dY(j-1).gt.lMax(2))lMax(2)=dY(j-1)
+              if(dY(j-1).lt.lMin(2))lMin(2)=dY(j-1)
+              lMean(2)=lMean(2)+dY(j-1)
+              if(ndim.eq.3)then
+c             z spacing
+              dZ(j-1)=sqrt((xm1(1,1,j,i)-xm1(1,1,j-1,i))**2+
+     $                     (ym1(1,1,j,i)-ym1(1,1,j-1,i))**2+
+     $                     (zm1(1,1,j,i)-zm1(1,1,j-1,i))**2)
+              if(dZ(j-1).gt.lMax(3))lMax(3)=dZ(j-1)
+              if(dZ(j-1).lt.lMin(3))lMin(3)=dZ(j-1)
+              lMean(3)=lMean(3)+dZ(j-1)
+              endif
+c             add to counter
+              lcount=lcount+1
+          enddo
+      enddo
+c
+c     find global mean 
+      call gop(lMean,gMean,'+  ',nDim)
+      call igop(lCount,ncount,'+  ',1)
+      do i=1,ndim
+         gMean(i)=gMean(i)/dble(nCount)
+      enddo
+c
+c     find global min
+      call gop(lMin,gMin,'m  ',nDim)
+c
+c     find global max
+      call gop(lMax,gMax,'M  ',nDim)
+           
+      return
+      end subroutine ps_GridSpacing
+c-----------------------------------------------------------------------
       subroutine ps_T_Diss(psi)
 c     this subroutine computes the thermal dissipation grad T:grad T at each
 c     grid point
@@ -597,6 +661,7 @@ c  Write to logfile that you're outputting data
 c  Check for file type
 c  If filetype =6 then use multi-file-output
       p66 = abs(param(66))
+c      p66=0
 c      if (p66.eq.6) then
 c         call mfo_outfld(prefix)
 c         call nekgsync                ! avoid race condition w/ outfld
