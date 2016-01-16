@@ -135,18 +135,18 @@ c    sum up terms that contribute to dissipation
       call add2col2(T(1,1,1,1,psi),ddux,ddux,nt) !ux^2
       call add2col2(T(1,1,1,1,psi),ddvy,ddvy,nt) !vy^2
       call add2col2(T(1,1,1,1,psi),ddwz,ddwz,nt) !wz^2
-      call add2col2(T(1,1,1,1,psi),dduy,ddvx,nt) 
-      call add2col2(T(1,1,1,1,psi),ddvz,ddwy,nt) 
-      call add2col2(T(1,1,1,1,psi),ddwx,dduz,nt) 
+      call add2col2(T(1,1,1,1,psi),dduy,ddvx,nt) !u_y*v_x (12*21) 
+      call add2col2(T(1,1,1,1,psi),ddvz,ddwy,nt) !v_z*w_y (23*32)
+      call add2col2(T(1,1,1,1,psi),ddwx,dduz,nt) !w_x*u_z (31*13)
 c   terms above contribute twice
       call cmult(T(1,1,1,1,psi),2.0,nt)
-c   add the rest of the terms
-      call add2col2(T(1,1,1,1,psi),dduy,dduy,nt)
-      call add2col2(T(1,1,1,1,psi),dduz,dduz,nt)
-      call add2col2(T(1,1,1,1,psi),ddvx,ddvx,nt)
-      call add2col2(T(1,1,1,1,psi),ddvz,ddvz,nt)
-      call add2col2(T(1,1,1,1,psi),ddwx,ddwx,nt)
-      call add2col2(T(1,1,1,1,psi),ddwy,ddwy,nt)
+c   add the rest of the terms                    !(ij)  
+      call add2col2(T(1,1,1,1,psi),dduy,dduy,nt) !(12)
+      call add2col2(T(1,1,1,1,psi),dduz,dduz,nt) !(13)
+      call add2col2(T(1,1,1,1,psi),ddvx,ddvx,nt) !(21)
+      call add2col2(T(1,1,1,1,psi),ddvz,ddvz,nt) !(23)
+      call add2col2(T(1,1,1,1,psi),ddwx,ddwx,nt) !(31)
+      call add2col2(T(1,1,1,1,psi),ddwy,ddwy,nt) !(32)
 c 
 c      call rzero(T(1,1,1,1,psi),nt) ! zero out epsilon
       return        
