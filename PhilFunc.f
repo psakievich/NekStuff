@@ -967,8 +967,7 @@ c            call byte_reverse(tbuf,id,ierr)
       end
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
-c     This subroutine is used to retreive the specific z values for the
-mesh
+c     This subroutine is used to retreive the specific z values for the mesh
       subroutine ps_GetZVal
 c
       include 'SIZE'
@@ -981,11 +980,9 @@ c   variable list
 c        INTEGERS:
 c        -- i,j -- counter variables
 c        -- n   -- number of gll points
-c        -- NumVals-- number of values per each spatial location size
-levels
+c        -- NumVals-- number of values per each spatial location size levels
 c        -- levels--  number of spatial locations
-c        -- last  --  place holder for last value to be updated in
-vector
+c        -- last  --  place holder for last value to be updated in vector
 c        REALS:
 c        -- rmax -- max radius to average out to
 c        -- r    -- radius of current value
