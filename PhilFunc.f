@@ -966,3 +966,309 @@ c            call byte_reverse(tbuf,id,ierr)
       return
       end
 c-----------------------------------------------------------------------
+c-----------------------------------------------------------------------
+c     This subroutine is used to retreive the specific z values for the
+mesh
+      subroutine ps_GetZVal
+c
+      include 'SIZE'
+      include 'TOTAL'
+      include 'mpif.h'
+      common /nekmpi/nid_,np_,nekcomm,nekgroup,nekreal
+      common /myzval/ zval,zvaltol
+c
+c   variable list
+c        INTEGERS:
+c        -- i,j -- counter variables
+c        -- n   -- number of gll points
+c        -- NumVals-- number of values per each spatial location size
+levels
+c        -- levels--  number of spatial locations
+c        -- last  --  place holder for last value to be updated in
+vector
+c        REALS:
+c        -- rmax -- max radius to average out to
+c        -- r    -- radius of current value
+c        -- ztest -- temp value for comparing
+c        -- zval -- array of spatial locations size levels
+c        -- scalar-- array of scalars to output size levels
+c
+c   variable declerations
+      integer,parameter:: levels=24*(lz1-1)+1
+      integer:: n,i,j,k,last,dest,sita,npes
+      integer:: oddball, buffSize
+      character(13):: filename
+      logical::used
+      real*8:: ztest,zvaltol
+      real*8,dimension(levels)::zval,tempArray
+      real::locMax,locMin
+      character*80::fout
+c      
+c   1) initialize values
+c      call MPI_Comm_Size(nekcomm,npes,ierr)
+      npes=np_
+      oddball=npes-npes/2*2
+      write(filename,"('node',I0,'.dat')")nid
+c      open(unit=nid,file=filename)
+c
+      n=nx1*ny1*nz1*nelv
+      zvaltol=1.e-9
+      buffSize=levels*8
+c
+      do i=1,levels
+        tempArray(i)=0.0
+        zval(i)=-10.0
+      enddo
+c
+c   2) intialize zval
+c
+      last=0
+c   -2a) initialize local zval 
+      do i=1,nelv!nz1*nelv
+      do k=1,nz1
+        ztest=zm1(1,1,k,i)
+        do j=1,levels
+c          if (zval(j,me).eq.ztest)then
+         if (abs(zval(j)-zm1(1,1,k,i)).lt.zvaltol)then
+            !repeated value, exit loop
+              exit
+          elseif(j.gt.last)then
+             !original value add to the end of the vector
+              zval(j)=zm1(1,1,k,i)
+              last=j
+              exit
+         endif
+        enddo
+c        write(6,*),"ACTVAL",zm1(1,1,k,i)
+      enddo
+      enddo
+c   -2aa) Set all unused values to zero
+      last=last+1
+      do i=last,levels
+         zval(i)=0.0
+      enddo
+      last=last-1
+
+c   -2b) MPI communication to send zval to all processors
+c   -2b1) Set up give and receive processors
+      if(nid.gt.npes/2-1)then
+        dest=nid-(npes/2-1)
+        dest=nid-2*dest+1
+      else
+        dest=npes/2-nid
+        dest=nid+2*dest-1
+      endif
+
+c      call nekgsync 
+      do sita=1,npes/2+oddball
+c     
+         if(dest.ge.npes.and.nid.lt.npes/2)then
+            dest=dest-npes/2-oddball
+         endif
+         if(dest.ge.npes/2.and.nid.ge.npes/2)then
+            dest=0-oddball
+         endif
+c         write(6,*),"ME",nid,"DEST",dest,npes
+
+c         call nekgsync
+         if(nid.le.npes/2-1)then
+            call csend(dest,zval,buffSize,dest,dest)
+         elseif(dest.gt.-1)then
+            call crecv(nid,tempArray,buffSize)
+         endif
+         call nekgsync
+         if(nid.gt.npes/2-1.and.dest.gt.-1)then
+            call csend(dest,zval,buffSize,dest,dest)
+         else
+            call crecv(nid,tempArray,buffSize)
+         endif
+         call nekgsync
+
+c    -2c) Sort values and remove duplicates
+         do j=1,levels
+           used=.false.
+           do k=1,last
+           if(abs(zval(k)-tempArray(j)).lt.zvaltol)then
+                used=.true.
+                exit
+           endif
+           enddo
+           if(used.eqv..false.)then
+             zval(last+1)=tempArray(j)
+             last=last+1
+           endif
+         enddo
+c        
+         dest=dest+1
+c
+      enddo
+c   -2d) Bubble sort values to put them all in the same order on each processor
+      do i=1,levels
+         do j=1,i
+            if(zval(i).lt.zval(j))then
+               tempArray(1)=zval(i)
+               zval(i)=zval(j)
+               zval(j)=tempArray(1)
+             endif
+         enddo
+      enddo
+c      do i=1,levels
+c         if(nid.eq.0)then
+c            write(6,*),"ZVAL", i, zval(i)
+c         endif
+c            write(nid,*),"ZVAL", i, zval(i)
+c      enddo
+c      call nekgsync
+c      close(unit=nid)
+      end
+c******************************************************************************
+      subroutine ps_PlanarAverage(iter,pwr,prefix)
+      include 'SIZE'
+      include 'TOTAL'
+      include 'mpif.h'
+      common /nekmpi/ nid_,np_,nekcomm,nekgroup,nekreal
+      common /myzval/ zval,zvaltol
+      common /mystuff/ tx(lx1,ly1,lz1,lelt)
+     $                , ty(lx1,ly1,lz1,lelt)
+     $                , tz(lx1,ly1,lz1,lelt)
+      integer,parameter:: levels=24*(lz1-1)+1
+      real*8:: zvaltol
+      real*8,dimension(levels)::zval
+
+      real,dimension(levels,7)::scalar,tempScalar
+      real,dimension(levels,1)::flucs,tempFlucs
+      real,dimension(levels):: wght,tempWght
+      real::myWght,dTheta
+      integer::e,i,j,k,ii,n,nt
+      integer::f,nflds,nflucs,iter,pwr
+      character*80 filename
+      character*3  prefix
+
+      n=nx1*ny1*nz1*nelv
+      nt=nx1*ny1*nz1*nelt
+      nflds=7
+      nflucs=1
+
+      do i=1,levels
+      do j=1,nflds
+      scalar(i,j)=0.
+      tempScalar(i,j)=0.
+      enddo
+      wght(i)=0.
+      tempWght(i)=0.
+      enddo
+
+      do i=1,levels
+      do j=1,nflucs
+      flucs(i,j)=0.
+      tempFlucs(i,j)=0.
+      enddo
+      enddo
+      do e=1,nelv
+      !---Find the desired face via normal
+        f=1
+        do while(unz(1,1,f,e).ne.-1.0.and.f.lt.6)
+          f=f+1
+        enddo
+      !---March over horizontal planes of face
+        do k=1,nz1
+      !-----Find the appropriate height
+          ii=1
+          do while(abs(zval(ii)-zm1(1,1,k,e))
+     $              .gt.zvaltol.and.ii.lt.levels)
+             ii=ii+1
+c      if(nid.eq.0)then
+c       write(6,*)f,ii,zval(ii),zm1(1,1,k,e),zvaltol
+c     $   ,abs(zval(ii)-zm1(1,1,k,e))
+c      endif
+          enddo
+c      if(nid.eq.0)then
+c       write(6,*)f,ii,zval(ii),zm1(1,1,k,e),zvaltol
+c     $   ,abs(zval(ii)-zm1(1,1,k,e))
+c      endif
+      !-----March over the face and weight the points 
+          do i=1,nx1*ny1
+           if(xm1(i,1,k,e).ne.0.)then
+              dTheta=atan(ym1(i,1,k,e)/xm1(i,1,k,e))
+           else
+              dTheta=0.
+           endif
+           myWght=area(i,1,f,e)
+           wght(ii)=wght(ii)+myWght
+           scalar(ii,1)=scalar(ii,1)+(vx(i,1,k,e)*cos(dTheta)
+     $                 +vy(i,1,k,e)*sin(dTheta))**pwr*myWght
+           scalar(ii,2)=scalar(ii,2)+vz(i,1,k,e)**pwr*myWght
+           scalar(ii,3)=scalar(ii,3)+t(i,1,k,e,1)**pwr*myWght
+           scalar(ii,4)=scalar(ii,4)+t(i,1,k,e,2)**pwr*myWght
+           scalar(ii,5)=scalar(ii,5)+t(i,1,k,e,3)**pwr*myWght
+           scalar(ii,6)=scalar(ii,6)+(t(i,1,k,e,1)*
+     $                               vz(i,1,k,e))**pwr*myWght
+           scalar(ii,7)=scalar(ii,7)+tz(i,1,k,e)**pwr*myWght
+           enddo!--i-loop
+        enddo!--k-loop
+      enddo!---e-loop
+      !---Sum over procesors
+      call gop(scalar,tempScalar,'+  ',levels*nflds)
+      call gop(wght,tempWght,'+  ',levels)
+      call nekgsync
+      !---Area average
+      do j=1,nflds
+      do i=1,levels
+          scalar(i,j)=scalar(i,j)/wght(i)
+      enddo
+      enddo
+      !----Compute Fluctuations
+      do e=1,nelv
+      !---Find the desired face via normal
+        f=1
+        do while(unz(1,1,f,e).ne.-1.0.and.f.lt.6)
+          f=f+1
+        enddo
+      !---March over horizontal planes of face
+        do k=1,nz1
+      !-----Find the appropriate height
+          ii=1
+          do while(abs(zval(ii)-zm1(1,1,k,e))
+     $              .gt.zvaltol.and.ii.lt.levels)
+             ii=ii+1
+          enddo
+      !-----March over the face and weight the points
+      !---!!!MAKE SURE YOU DOUBLE CHECK SIGNS ON MEAN PROFILE!!! 
+          do i=1,nx1*ny1
+           myWght=area(i,1,f,e)
+           flucs(ii,1)=flucs(ii,1)+(t(i,1,k,e,1)-scalar(ii,3)**
+     $                       (1.0/dble(pwr)))**pwr*myWght
+           enddo!--i-loop
+        enddo!--k-loop
+      enddo!---e-loop
+
+      !---Sum over processors
+      call gop(flucs,tempFlucs,'+  ',levels*nflucs)
+      call nekgsync
+      !---Area average
+      do j=1,nflucs
+      do i=1,levels
+          flucs(i,j)=flucs(i,j)/wght(i)
+      enddo
+      enddo
+      !----Dump to File
+      if(nid.eq.0)then
+         write(filename,"(A3,'prof',I0,'.dat')")prefix,iter
+         open(unit=10,file=filename)
+         do i=1,levels
+            write(10,*)        zval(i)
+     $                        ,scalar(i,1)
+     $                        ,scalar(i,2)
+     $                        ,scalar(i,3)
+     $                        ,scalar(i,4)
+     $                        ,scalar(i,5)
+     $                        ,scalar(i,6)
+     $                        ,scalar(i,7)
+     $                        ,flucs(i,1)
+     $                        ,wght(i)
+         enddo
+         close(10)
+      endif
+      end
+c******************************************************************************
+
