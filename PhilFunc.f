@@ -892,7 +892,7 @@ c
             if (nelgh.lt.10000) then
                WRITE(fhdfle,'(4I4,1pe14.7,I5,1X,30A1,1X,A12)')
      $              NELGH,NXH,NYH,NZH,TIME,ikstep,(EXCODE1(I),I=1,30),
-     $              ' 4 NELT,NX,NY,N'
+     $              'NELT,NX,NY,N'
             else
                write(fhdfle,'(i10,3i4,1P1e18.9,i9,1x,30a1)')
      $         nelgh,nxh,nyh,nzh,time,istep,(excode1(i),i=1,30)
