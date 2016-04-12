@@ -65,7 +65,7 @@ $(JO)findpts_el_3.o $(JO)findpts_el_2.o
 #PS Routines#####################################################################
 PO = ps_
 
-PSCORE=$(PO)PhilFunc.o #psadd
+PSCORE=$(PO)PhilFunc.o $(PO)vtkfiles.o#psadd
 PSD := -DPREFIX=ps_ #psadd
 
 # YP NEKNEK SOLVER
@@ -235,6 +235,7 @@ $(OBJDIR)/multimesh.o	:$S/multimesh.f;		$(F77) -c $(FL2) $< -o $@
 $(OBJDIR)/singlmesh.o	:$S/singlmesh.f;		$(F77) -c $(FL2) $< -o $@
 $(OBJDIR)/lb_setqvol.o	:$S/lb_setqvol.f;		$(F77) -c $(FL2) $< -o $@
 $(OBJDIR)/$(PO)PhilFunc.o	:$(PS)/PhilFunc.f;	$(F77) -c $(FL2) $< -o $@
+$(OBJDIR)/$(PO)vtkfiles.o	:$(PS)/vtkfiles.f;	$(F77) -c $(FL2) $< -o $@
 
 # MXM       ############################################################################
 $(OBJDIR)/mxm_wrapper.o	  :$S/mxm_wrapper.f;		$(F77) -c $(FL2) $< -o $@ 
