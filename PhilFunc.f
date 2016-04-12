@@ -966,6 +966,44 @@ c            call byte_reverse(tbuf,id,ierr)
       return
       end
 c-----------------------------------------------------------------------
+c******************************************************************************
+      subroutine ps_hpts_create_vtk(nIter, bBinary, chFileNameBase)
+c     ROUTINE DEFINITION
+c     This routine writes out the data from hpts in an
+c     curvilinear vtk file format
+c
+      !COMMON BLOCKS
+      include 'SIZE'
+      include 'TOTAL'
+      !INPUT VARIABLE DEFINITIONS
+      character*50 chFileNameBase
+      integer nIter
+      logical bBinary
+      !LOCAL VARIABLE DEFINITIONS
+      character*80 chFileNameFull
+      !STEP 1) OPEN VTK FILE
+      if(nid.eq.0)
+         write(chFileNameFull,"(A50,I0,'.vtk')")chFileNameBase,nIter
+         if (bBinary) then
+            call byte_open(chFileNameFull,ierr)
+         else
+            open(unit=50,file=chFileNameFull,form='formatted',
+     $       status='unknown')
+         endif
+      endif
+      !STEP 2) WRITE HEADER
+      !STEP 3) WRITE MESH INFO
+      !STEP 4) WRITE VARIABLES
+      !STEP 4a) WRITE SCALARS
+      !STEP 4b) WRITE VECTORS
+      !STEP 5) CLOSE FILE
+      if(bBinary) then
+         call byte_close(ierr)
+      else
+         close(50)
+      endif
+      end subroutine
+c******************************************************************************
 c-----------------------------------------------------------------------
 c     This subroutine is used to retreive the specific z values for the mesh
       subroutine ps_GetZVal
@@ -1267,5 +1305,3 @@ c      endif
          close(10)
       endif
       end
-c******************************************************************************
-

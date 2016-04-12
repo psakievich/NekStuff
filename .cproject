@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<?fileVersion 4.0.0?><cproject storage_type_id="org.eclipse.cdt.core.XmlProjectDescriptionStorage">
+	<storageModule moduleId="org.eclipse.cdt.core.settings">
+		<cconfiguration id="photran.managedbuild.toolchain.xlf.fortran.macosx.exe.debug.484328954">
+			<storageModule buildSystemId="org.eclipse.cdt.managedbuilder.core.configurationDataProvider" id="photran.managedbuild.toolchain.xlf.fortran.macosx.exe.debug.484328954" moduleId="org.eclipse.cdt.core.settings" name="Debug">
+				<externalSettings/>
+				<extensions>
+					<extension id="org.eclipse.cdt.core.GASErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
+					<extension id="org.eclipse.cdt.core.GmakeErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
+					<extension id="org.eclipse.cdt.core.CWDLocator" point="org.eclipse.cdt.core.ErrorParser"/>
+					<extension id="org.eclipse.cdt.core.GCCErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
+				</extensions>
+			</storageModule>
+			<storageModule moduleId="cdtBuildSystem" version="4.0.0">
+				<configuration buildProperties="" id="photran.managedbuild.toolchain.xlf.fortran.macosx.exe.debug.484328954" name="Debug" parent="org.eclipse.cdt.build.core.emptycfg">
+					<folderInfo id="photran.managedbuild.toolchain.xlf.fortran.macosx.exe.debug.484328954.1837465038" name="/" resourcePath="">
+						<toolChain id="photran.managedbuild.toolchain.xlf.fortran.macosx.exe.debug.720544817" name="IBM XL Fortran Tool Chain" superClass="photran.managedbuild.toolchain.xlf.fortran.macosx.exe.debug">
+							<targetPlatform id="photran.managedbuild.toolchain.xlf.fortran.macosx.exe.debug.484328954.1806804658" name=""/>
+							<builder id="photran.managedbuild.target.xlf.builder.macosx.exe.debug.326215562" managedBuildOn="false" name="Gnu Make Builder.Debug" superClass="photran.managedbuild.target.xlf.builder.macosx.exe.debug"/>
+							<tool id="photran.managedbuild.tool.xlf.c.compiler.macosx.exe.debug.1698437359" name="GCC C Compiler" superClass="photran.managedbuild.tool.xlf.c.compiler.macosx.exe.debug"/>
+							<tool id="photran.managedbuild.tool.xlf.fortran.compiler.macosx.exe.debug.1780438946" name="IBM XL Fortran Compiler" superClass="photran.managedbuild.tool.xlf.fortran.compiler.macosx.exe.debug"/>
+							<tool id="photran.managedbuild.tool.macosx.fortran.xlf.linker.macosx.exe.debug.605789065" name="IBM XL Fortran Linker" superClass="photran.managedbuild.tool.macosx.fortran.xlf.linker.macosx.exe.debug"/>
+							<tool id="photran.managedbuild.tool.xlf.assembler.macosx.exe.debug.378752871" name="GCC Assembler" superClass="photran.managedbuild.tool.xlf.assembler.macosx.exe.debug"/>
+						</toolChain>
+					</folderInfo>
+				</configuration>
+			</storageModule>
+			<storageModule moduleId="org.eclipse.cdt.core.externalSettings"/>
+		</cconfiguration>
+	</storageModule>
+	<storageModule moduleId="cdtBuildSystem" version="4.0.0">
+		<project id="Nek5000.null.1397304669" name="Nek5000"/>
+	</storageModule>
+	<storageModule moduleId="scannerConfiguration">
+		<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId=""/>
+	</storageModule>
+	<storageModule moduleId="org.eclipse.cdt.core.LanguageSettingsProviders"/>
+</cproject>
