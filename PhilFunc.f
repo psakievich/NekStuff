@@ -1331,8 +1331,8 @@ c***********************************************************************
       common /myzval/ zval,zvaltol
       character*32 chProfile
       integer,parameter:: levels=24*(lz1-1)+1
+      real*8,dimension(levels)::zval,dProfile,dWork
 
-      real dProfile(levels), dWork(levels)
       integer i,j,k,nt,nv
 
       !Initialize
@@ -1347,7 +1347,7 @@ c***********************************************************************
       !Get position
       call ps_GetZVal
       !Get Profile on rank 0
-      if(nid.eq.0)then call psLoadProfile(dProfile,chProfile)
+      if(nid.eq.0) call psLoadProfile(dProfile,chProfile)
       !Send profile to all ranks
       call gop(dProfile,dWork,'+  ',levels)
       !Compute changes
