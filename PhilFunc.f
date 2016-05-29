@@ -1347,3 +1347,47 @@ c***********************************************************************
       enddo
 
       end subroutine
+c***********************************************************************
+      subroutine psInitStateMinus(chProfile)
+      include 'SIZE'
+      include 'TOTAL'
+      include 'mpif.h'
+      common /nekmpi/ nid_,np_,nekcomm,nekgroup,nekreal
+      common /myzval/ zval,zvaltol
+      character*32 chProfile
+      integer,parameter:: levels=24*(lz1-1)+1
+
+      real dProfile(levels), dWork(levels)
+      integer i,j,k,nt,nv
+
+      !Initialize
+      do i=1,levels
+        dProfile(i)=0.
+        dWork(i)=0.
+      enddo
+
+      nt=lx1*ly1*lz1*lelt
+      nv=lx1*ly1*lz1*lelv
+
+      !Get position
+      call ps_GetZVal
+      !Get Profile on rank 0
+      if(nid.eq.0)then call psLoadProfile(dProfile,chProfile)
+      !Send profile to all ranks
+      call gop(dProfile,dWork,'+  ',levels)
+      !Compute changes
+      do i=1,nv
+         vx(i,1,1,1)=-vx(i,1,1,1)
+         vy(i,1,1,1)=-vy(i,1,1,1)
+         vz(i,1,1,1)=-vz(i,1,1,1)
+      end do
+      do i=1,nt
+         do j=1,levels
+            if(abs(zval(j)-zm1(i,1,1,1)).lt.zvaltol)then
+               t(i,1,1,1,1)=t(i,1,1,1,1)-2.0*dProfile(j)
+               exit
+            end if
+         end do
+      end do
+
+      end subroutine
