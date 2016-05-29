@@ -1321,32 +1321,7 @@ c***********************************************************************
       enddo
 
       end
-c***********************************************************************
-      subroutine psResetTempProf(dProfile)
-      include 'SIZE'
-      include 'TOTAL'
-      common /myzval/ zval,zvaltol
-      !PARAMETERS
-      integer,parameter:: nLevels=217
-      real,parameter:: dZtol=1.e-10
-      !IO VARIABLES
-      real dProfile(nLevels)
 
-      integer i,j,k
-      integer nt
-
-      nt=lx1*ly1*lz1*lelt
-
-      do i=1,nt
-         do j=1,nLevels
-            if(abs(zm1(i,1,1,1)-zval(j)).lt.zvaltol)then
-                t(i,1,1,1,1)=t(i,1,1,1,1)-2.0*dProfile(j)
-                exit
-            endif
-         enddo
-      enddo
-
-      end subroutine
 c***********************************************************************
       subroutine psInitStateMinus(chProfile)
       include 'SIZE'
