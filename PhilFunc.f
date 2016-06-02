@@ -1385,17 +1385,17 @@ c***********************************************************************
       include 'mpif.h'
 
       !LOCAL VARIABLES
-      integer nt, nv, np !points in t field, v field and p field
+      integer nt, nv, nelp !points in t field, v field and p field
       integer i,j,k
       !DEFINE VARIABLES
       nt=lx1*ly1*lz1*nelt
       nv=lx1*ly1*lz1*nelv
-      np=lx2*ly2*lz2*nelv
+      nelp=lx2*ly2*lz2*nelv
 
       !BEGIN CALCULATIONS
       do i=1,nelt
       !temperature shift and 180 degree rotation
-         t(i,1,1,1,1)=(t(i,1,1,1,1)-0.5)*-1.0+0.5
+         t(i,1,1,1,1)=-1.0*(t(i,1,1,1,1)-0.5)+0.5
       enddo
       do i=1,nelv
       !velocity shift and 180 degree rotation
