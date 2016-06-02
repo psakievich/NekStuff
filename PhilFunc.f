@@ -1310,16 +1310,16 @@ c***********************************************************************
       !PARAMETERS
       integer,parameter:: nLevels=217
       !IO VARIABLES
-      real dProfile(nLevels)
+      real*8 dProfile(nLevels)
       character*32 chFilename
       !LOCAL VARIABLES
       integer i
-
-      open(unit=10,file=chFileName)
+      write(6,*),"Loading profile from ",chFileName
+      open(unit=30,file=chFileName)
       do i=1,nLevels
-         read(10,*),dProfile(i)
+         read(30,*)dProfile(i)
       enddo
-
+      close(30)
       end
 
 c***********************************************************************
@@ -1345,21 +1345,31 @@ c***********************************************************************
       nv=lx1*ly1*lz1*lelv
 
       !Get position
+      if(nid.eq.0) write(6,*)"Get Zvals"
       call ps_GetZVal
       !Get Profile on rank 0
       if(nid.eq.0) call psLoadProfile(dProfile,chProfile)
+      if(nid.eq.0) then
+      write(6,*)"Mean Profile"
+      do i=1,levels
+          write(6,*)zval(i),dProfile(i)
+      enddo
+      endif
       !Send profile to all ranks
+      if(nid.eq.0) write(6,*)"Send profile to all ranks"
       call gop(dProfile,dWork,'+  ',levels)
       !Compute changes
+      if(nid.eq.0) write(6,*)"Flip Velocity"
       do i=1,nv
          vx(i,1,1,1)=-vx(i,1,1,1)
          vy(i,1,1,1)=-vy(i,1,1,1)
          vz(i,1,1,1)=-vz(i,1,1,1)
       end do
+      if(nid.eq.0) write(6,*)"Flip temperature"
       do i=1,nt
          do j=1,levels
             if(abs(zval(j)-zm1(i,1,1,1)).lt.zvaltol)then
-               t(i,1,1,1,1)=t(i,1,1,1,1)-2.0*dProfile(j)
+               t(i,1,1,1,1)=2.0*dProfile(j)-t(i,1,1,1,1)
                exit
             end if
          end do
