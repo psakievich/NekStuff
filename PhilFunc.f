@@ -1349,12 +1349,14 @@ c***********************************************************************
       call ps_GetZVal
       !Get Profile on rank 0
       if(nid.eq.0) call psLoadProfile(dProfile,chProfile)
+
       if(nid.eq.0) then
       write(6,*)"Mean Profile"
       do i=1,levels
           write(6,*)zval(i),dProfile(i)
       enddo
       endif
+
       !Send profile to all ranks
       if(nid.eq.0) write(6,*)"Send profile to all ranks"
       call gop(dProfile,dWork,'+  ',levels)
