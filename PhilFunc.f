@@ -1378,3 +1378,35 @@ c***********************************************************************
       end do
 
       end subroutine
+c***********************************************************************
+      subroutine psStateTransform
+      include 'SIZE'
+      include 'TOTAL'
+      include 'mpif.h'
+
+      !LOCAL VARIABLES
+      integer nt, nv, np !points in t field, v field and p field
+      integer i,j,k
+      !DEFINE VARIABLES
+      nt=lx1*ly1*lz1*nelt
+      nv=lx1*ly1*lz1*nelv
+      np=lx2*ly2*lz2*nelv
+
+      !BEGIN CALCULATIONS
+      do i=1,nelt
+      !temperature shift and 180 degree rotation
+         t(i,1,1,1,1)=(t(i,1,1,1,1)-0.5)*-1.0+0.5
+      enddo
+      do i=1,nelv
+      !velocity shift and 180 degree rotation
+         vx(i,1,1,1)=-vx(i,1,1,1)
+         vy(i,1,1,1)=-vy(i,1,1,1)
+         vz(i,1,1,1)=-vz(i,1,1,1)
+      enddo
+      do i=1,nelp
+      !temperature shift and 180 degree rotation
+         pr(i,1,1,1)=-pr(i,1,1,1)
+      enddo
+      call outpost(vx,vy,vz,pr,t,'FLP')
+      call exitt
+      end subroutine
