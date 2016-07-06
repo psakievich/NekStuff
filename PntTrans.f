@@ -24,13 +24,13 @@ c     ASSUMING LHIS IS MAX NUMBER OF POINTS TO READ IN ON ONE PROCESSOR
       parameter(lSYM=lx1*ly1*lz1)
 
 
-      common /SYMc_hptsr/ SYMPts      (ldim,lSYM)
-     $               , SYMfieldout (nfldm,lSYM)
-     $               , SYMdist     (lSYM)
-     $               , SYMrst      (lSYM*ldim)
+      real pts      (ldim,lSYM)
+     $               , fieldout (nfldm,lSYM)
+     $               , dist     (lSYM)
+     $               , rst      (lSYM*ldim)
 
 
-      common /SYMc_hptsi/ SYMrcode(lSYM),SYMelid(lSYM),SYMproc(lSYM)
+      integer rcode(lSYM),elid(lSYM),proc(lSYM)
 
       common /scrcg/  pm1 (lx1,ly1,lz1,lelv) ! mapped pressure
       common /outtmp/ wrk (lx1*ly1*lz1*lelt,nfldm)
@@ -85,11 +85,11 @@ c     BEGIN ELEMENT BASED LOOP
       
       ! interpolate
       if(icalld.eq.0) then
-        call findpts(inth_hpts,SYMrcode,1,
-     &                 SYMproc,1,
-     &                 SYMelid,1,
-     &                 SYMrst,ndim,
-     &                 SYMdist,1,
+        call findpts(inth_hpts,rcode,1,
+     &                 proc,1,
+     &                 elid,1,
+     &                 rst,ndim,
+     &                 dist,1,
      &                 pts(1,1),ndim,
      &                 pts(2,1),ndim,
      &                 pts(3,1),ndim,npts)
@@ -117,10 +117,10 @@ c     BEGIN ELEMENT BASED LOOP
       ! evaluate input field at given points
       do ifld = 1,nflds
          call findpts_eval(inth_hpts,fieldout(ifld,1),nfldm,
-     &                     SYMrcode,1,
-     &                     SYMproc,1,
-     &                     SYMelid,1,
-     &                     SYMrst,ndim,npts,
+     &                     rcode,1,
+     &                     proc,1,
+     &                     elid,1,
+     &                     rst,ndim,npts,
      &                     wrk(1,ifld))
       enddo
 
@@ -145,6 +145,7 @@ c-----------------------------------------------------------------------
 c     npts=local count; npoints=total count
 
       include 'SIZE'
+      include 'TOTAL'
       include 'PARALLEL'
 
       parameter (lt2=2*lx1*ly1*lz1*lelt)
