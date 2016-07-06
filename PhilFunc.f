@@ -258,7 +258,7 @@ c     ASSUMING LHIS IS MAX NUMBER OF POINTS TO READ IN ON ONE PROCESSOR
 
       if(icalld.eq.0) then
         npts  = lhis      ! number of points per proc
-        call ps_hpts_in(pts,npts,npoints) !npts and npoints are blank???
+        call ps_hpts_in(pts,npts,npoints) !npoints is initially zero
         call intpts_setup(-1.0,inth_hpts) ! use default tolerance
       endif
 
