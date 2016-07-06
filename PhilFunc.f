@@ -1407,6 +1407,7 @@ c***********************************************************************
       !temperature shift and 180 degree rotation
          pr(i,1,1,1)=-pr(i,1,1,1)
       enddo
-      call outpost(vx,vy,vz,pr,t,'FLP')
+      call outpost(vx,vy,vz,pr,t(1,1,1,1,1),'FL1')
+      !call prepost(.true.,'FLP')
       call exitt
       end subroutine
