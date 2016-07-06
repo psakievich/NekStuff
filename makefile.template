@@ -236,7 +236,7 @@ $(OBJDIR)/singlmesh.o	:$S/singlmesh.f;		$(F77) -c $(FL2) $< -o $@
 $(OBJDIR)/lb_setqvol.o	:$S/lb_setqvol.f;		$(F77) -c $(FL2) $< -o $@
 $(OBJDIR)/$(PO)PhilFunc.o	:$(PS)/PhilFunc.f;	$(F77) -c $(FL2) $< -o $@
 $(OBJDIR)/$(PO)vtkfiles.o	:$(PS)/vtkfiles.f;	$(F77) -c $(FL2) $< -o $@
-$(OBJDIR)/$(PO)PntTransf.o	:$(PS)/PntTrans.f;	$(F77) -c $(FL2) $< -o $@
+$(OBJDIR)/$(PO)PntTrans.o	:$(PS)/PntTrans.f;	$(F77) -c $(FL2) $< -o $@
 
 # MXM       ############################################################################
 $(OBJDIR)/mxm_wrapper.o	  :$S/mxm_wrapper.f;		$(F77) -c $(FL2) $< -o $@ 
