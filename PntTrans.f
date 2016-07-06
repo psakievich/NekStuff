@@ -39,6 +39,7 @@ c     ASSUMING LHIS IS MAX NUMBER OF POINTS TO READ IN ON ONE PROCESSOR
       logical iffind
 
       integer icalld,npoints,npts,elmNum
+      integer iEnd,iEndTotal
       save    icalld,npoints,npts
       data    icalld  /0/
       data    npoints /0/
@@ -77,7 +78,9 @@ c     ASSUMING LHIS IS MAX NUMBER OF POINTS TO READ IN ON ONE PROCESSOR
 
 c     BEGIN ELEMENT BASED LOOP
       elmNum=1 !initialize element
-      do while (elmNum.le.nelt)
+      iEnd=0 !set flag for end of elements to zero
+      iEndTotal=0
+      do while (elmNum.le.nelt.and.iEnd.eq.0)
 
         call load_element(pts,npts,npoints,elmNum)
         call intpts_setup(-1.0,inth_hpts) ! use default tolerance
@@ -133,6 +136,15 @@ c     BEGIN ELEMENT BASED LOOP
          pm1(i,1,1,elmNum)=-fieldout(4,i)
          t(i,1,1,elmNum,1)=1.0-fieldout(5,i)
       end do
+
+      if(elmNum.lt.nelt) then
+        elmNum=elmNum+1
+      else
+        iEnd=1
+      end if
+
+      call gop(iEnd,iEndTotal,'*  ',1)
+
       end do
       call prepost_map(1)  ! maps back axisymm arrays
 
