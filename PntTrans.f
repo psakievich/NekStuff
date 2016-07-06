@@ -20,7 +20,7 @@ c     ASSUMING LHIS IS MAX NUMBER OF POINTS TO READ IN ON ONE PROCESSOR
       include 'SIZE'
       include 'TOTAL'
 
-      parameter(nfldm=ldim+ldimt+1)
+      parameter(nfldm=5)
       parameter(lSYM=lx1*ly1*lz1)
 
 
@@ -144,7 +144,9 @@ c     BEGIN ELEMENT BASED LOOP
       end if
 
       call gop(iEnd,iEndTotal,'*  ',1)
-
+      if(nid.eq.0)then
+         write(6,*),"Elm num",elmNum-1,"of",nelt,"iEnd equals",iend
+      end if
       end do
       call prepost_map(1)  ! maps back axisymm arrays
 
