@@ -146,7 +146,7 @@ c     npts=local count; npoints=total count
 
       include 'SIZE'
       include 'TOTAL'
-      include 'PARALLEL'
+      !include 'PARALLEL'
 
       parameter (lt2=2*lx1*ly1*lz1*lelt)
       common /scrns/ xyz(ldim,lt2)
