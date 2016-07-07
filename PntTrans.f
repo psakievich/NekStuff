@@ -87,14 +87,14 @@ c
 c     BEGIN ELEMENT BASED LOOP
 c
       do while (elmNum.le.nelt.and.iEnd.eq.0)
-      if(nid.eq.0)then
-         write(6,*),"Elm num",elmNum-1,"of",nelt,"iEnd equals",iend
-      end if
+      !if(nid.eq.0)then
+      !   write(6,*),"Elm num",elmNum-1,"of",nelt,"iEnd equals",iend
+      !end if
         call load_element(pts,npts,npoints,elmNum)
-      if(nid.eq.0)then
-         write(6,*),"Elm num",elmNum-1,"of",nelt,"iEnd equals",iend
-      end if
-      call exitt
+      !if(nid.eq.0)then
+      !   write(6,*),"Elm num",elmNum-1,"of",nelt,"iEnd equals",iend
+      !end if
+      !call exitt
       
       ! interpolate
         call findpts(inth_hpts,rcode,1,
@@ -144,6 +144,7 @@ c
 
       if(elmNum.lt.nelt) then
         elmNum=elmNum+1
+        if(nid.eq.0)write(6,*)"ElmNum Inc",elmNum
       else
         iEnd=1
       end if
