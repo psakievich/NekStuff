@@ -38,13 +38,11 @@ c     ASSUMING LHIS IS MAX NUMBER OF POINTS TO READ IN ON ONE PROCESSOR
 
       logical iffind
 
-      integer icalld,npoints,npts,elmNum
+      integer icalld,npoints,npts,nelmNum
       integer iEnd,iEndTotal
       save    icalld,npoints,npts
       data    icalld  /0/
       data    npoints /0/
-
-      save    inth_hpts
 
       nxyz  = nx1*ny1*nz1
       ntot  = nxyz*nelt 
@@ -80,19 +78,19 @@ c     ASSUMING LHIS IS MAX NUMBER OF POINTS TO READ IN ON ONE PROCESSOR
       if(nflds.ne.nfldm.and.nid.eq.0)write(6,*)"Error nflds ",nflds,
      $   nfldm
       call intpts_setup(-1.0,inth_hpts) ! use default tolerance
-      elmNum=1 !initialize element
+      nelmNum=1 !initialize element
       iEnd=0 !set flag for end of elements to zero
       iEndTotal=0
 c
 c     BEGIN ELEMENT BASED LOOP
 c
-      do while (elmNum.le.nelt.and.iEnd.eq.0)
+      do while (nelmNum.le.nelt.and.iEnd.eq.0)
       if(nid.eq.0)then
-         write(6,*),"Elm num",elmNum,"of",nelt
+         write(6,*),"Elm num",nelmNum,"of",nelt
       end if
-        call load_element(pts,npts,npoints,elmNum)
+        call load_element(pts,npts,npoints,nelmNum)
       if(nid.eq.0)then
-         write(6,*),"Elm num",elmNum,"of",nelt
+         write(6,*),"Elm num",nelmNum,"of",nelt
       end if
       !call exitt
       
@@ -135,26 +133,27 @@ c
       
       !Write results back to the current element
       do i=1,nxyz
-         vx(i,1,1,elmNum)=-fieldout(1,i)
-         vy(i,1,1,elmNum)=-fieldout(2,i)
-         vz(i,1,1,elmNum)=-fieldout(3,i)
-         pm1(i,1,1,elmNum)=-fieldout(4,i)
-         t(i,1,1,elmNum,1)=1.0-fieldout(5,i)
+         vx(i,1,1,nelmNum)=-fieldout(1,i)
+         vy(i,1,1,nelmNum)=-fieldout(2,i)
+         vz(i,1,1,nelmNum)=-fieldout(3,i)
+         pm1(i,1,1,nelmNum)=-fieldout(4,i)
+         t(i,1,1,nelmNum,1)=1.0-fieldout(5,i)
       end do
 
-      if(elmNum.lt.nelt) then
-        if(nid.eq.0)write(6,*)"ElmNum PreInc",elmNum
-        elmNum=elmNum+1
-        if(nid.eq.0)write(6,*)"ElmNum Inc",elmNum
+      if(nelmNum.lt.nelt) then
+        if(nid.eq.0)write(6,*)"ElmNum PreInc",nelmNum
+        nelmNum=nelmNum+1
+        if(nid.eq.0)write(6,*)"ElmNum Inc",nelmNum
       else
         iEnd=1
       end if
 
       call gop(iEnd,iEndTotal,'*  ',1)
       if(nid.eq.0)then
-         write(6,*),"Elm num",elmNum-1,"of",nelt,"iEnd equals",iend
+         write(6,*),"Elm num",nelmNum,"of",nelt,"iEnd equals",iend
       end if
       end do
+
       call prepost_map(1)  ! maps back axisymm arrays
 
       if(nio.eq.0) write(6,*) 'done :: swap points based on symmetry'
