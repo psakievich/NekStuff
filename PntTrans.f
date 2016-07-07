@@ -87,13 +87,13 @@ c
 c     BEGIN ELEMENT BASED LOOP
 c
       do while (elmNum.le.nelt.and.iEnd.eq.0)
-      !if(nid.eq.0)then
-      !   write(6,*),"Elm num",elmNum-1,"of",nelt,"iEnd equals",iend
-      !end if
+      if(nid.eq.0)then
+         write(6,*),"Elm num",elmNum-1,"of",nelt
+      end if
         call load_element(pts,npts,npoints,elmNum)
-      !if(nid.eq.0)then
-      !   write(6,*),"Elm num",elmNum-1,"of",nelt,"iEnd equals",iend
-      !end if
+      if(nid.eq.0)then
+         write(6,*),"Elm num",elmNum-1,"of",nelt
+      end if
       !call exitt
       
       ! interpolate
