@@ -88,11 +88,11 @@ c     BEGIN ELEMENT BASED LOOP
 c
       do while (elmNum.le.nelt.and.iEnd.eq.0)
       if(nid.eq.0)then
-         write(6,*),"Elm num",elmNum-1,"of",nelt
+         write(6,*),"Elm num",elmNum,"of",nelt
       end if
         call load_element(pts,npts,npoints,elmNum)
       if(nid.eq.0)then
-         write(6,*),"Elm num",elmNum-1,"of",nelt
+         write(6,*),"Elm num",elmNum,"of",nelt
       end if
       !call exitt
       
@@ -143,6 +143,7 @@ c
       end do
 
       if(elmNum.lt.nelt) then
+        if(nid.eq.0)write(6,*)"ElmNum PreInc",elmNum
         elmNum=elmNum+1
         if(nid.eq.0)write(6,*)"ElmNum Inc",elmNum
       else
@@ -171,8 +172,9 @@ c     npts=local count; npoints=total count
       parameter (lt2=2*lx1*ly1*lz1*lelt)
       common /scrns/ xyz(ldim,lt2)
       common /scruz/ mid(lt2)  ! Target proc id
-      integer i, elmNum
+      integer, INTENT(in) elmNum
       real    pts(ldim,npts)
+      integer i
 
       if(nid.eq.0)write(6,*)"Load elm ElmNum Inc",elmNum
       !load pnts
