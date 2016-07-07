@@ -174,6 +174,7 @@ c     npts=local count; npoints=total count
       integer i
       real    pts(ldim,npts)
 
+      if(nid.eq.0)write(6,*)"Load elm ElmNum Inc",elmNum
       !load pnts
       do i=1,lx1*ly1*lz1
          pts(1,i)=xm1(i,1,1,elmNum)
