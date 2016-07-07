@@ -140,7 +140,7 @@ c
         iEnd=1
       end if
 
-      call gop(iEnd,iEndTotal,'*  ',1)
+      call igop(iEnd,iEndTotal,'*  ',1)
       if(nid.eq.0)then
          write(6,*),"Elm num",nelmNum,"of",nelt,"iEnd equals",iend
       end if
