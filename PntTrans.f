@@ -76,18 +76,22 @@ c     ASSUMING LHIS IS MAX NUMBER OF POINTS TO READ IN ON ONE PROCESSOR
          endif
       enddo
 
-c     BEGIN ELEMENT BASED LOOP
+
+      if(nflds.ne.nfldm.and.nid.eq.0)write(6,*)"Error nflds ",nflds,
+     $   nfldm
+      call intpts_setup(-1.0,inth_hpts) ! use default tolerance
       elmNum=1 !initialize element
       iEnd=0 !set flag for end of elements to zero
       iEndTotal=0
+c
+c     BEGIN ELEMENT BASED LOOP
+c
       do while (elmNum.le.nelt.and.iEnd.eq.0)
 
         call load_element(pts,npts,npoints,elmNum)
-        call intpts_setup(-1.0,inth_hpts) ! use default tolerance
 
       
       ! interpolate
-      if(icalld.eq.0) then
         call findpts(inth_hpts,rcode,1,
      &                 proc,1,
      &                 elid,1,
@@ -113,10 +117,6 @@ c     BEGIN ELEMENT BASED LOOP
      &        (pts(k,i),k=1,ndim)
            endif
         enddo
-        icalld = 1
-      endif
-      if(nflds.ne.nfldm.and.nid.eq.0)write(6,*)"Error nflds ",nflds,
-     $   nfldm
       ! evaluate input field at given points
       do ifld = 1,nflds
          call findpts_eval(inth_hpts,fieldout(ifld,1),nfldm,
@@ -165,7 +165,7 @@ c     npts=local count; npoints=total count
       parameter (lt2=2*lx1*ly1*lz1*lelt)
       common /scrns/ xyz(ldim,lt2)
       common /scruz/ mid(lt2)  ! Target proc id
-      integer elmNum,i
+      integer i
       real    pts(ldim,npts)
 
       !load pnts
