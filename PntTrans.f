@@ -90,9 +90,11 @@ c
       if(nid.eq.0)then
          write(6,*),"Elm num",elmNum-1,"of",nelt,"iEnd equals",iend
       end if
-      call exitt
         call load_element(pts,npts,npoints,elmNum)
-
+      if(nid.eq.0)then
+         write(6,*),"Elm num",elmNum-1,"of",nelt,"iEnd equals",iend
+      end if
+      call exitt
       
       ! interpolate
         call findpts(inth_hpts,rcode,1,
