@@ -85,14 +85,8 @@ c
 c     BEGIN ELEMENT BASED LOOP
 c
       do while (nelmNum.le.nelt.and.iEnd.eq.0)
-      if(nid.eq.0)then
-         write(6,*),"Elm num",nelmNum,"of",nelt
-      end if
+
         call load_element(pts,npts,npoints,nelmNum)
-      if(nid.eq.0)then
-         write(6,*),"Elm num",nelmNum,"of",nelt
-      end if
-      !call exitt
       
       ! interpolate
         call findpts(inth_hpts,rcode,1,
@@ -141,9 +135,7 @@ c
       end do
 
       if(nelmNum.lt.nelt) then
-        if(nid.eq.0)write(6,*)"ElmNum PreInc",nelmNum
         nelmNum=nelmNum+1
-        if(nid.eq.0)write(6,*)"ElmNum Inc",nelmNum
       else
         iEnd=1
       end if
@@ -161,7 +153,7 @@ c
       return
       end
 c-----------------------------------------------------------------------
-      subroutine load_element(pts,npts,npoints,elmNum)
+      subroutine load_element(pts,npts,npoints,nelmNum)
 c     npts=local count; npoints=total count
 
       include 'SIZE'
@@ -171,16 +163,15 @@ c     npts=local count; npoints=total count
       parameter (lt2=2*lx1*ly1*lz1*lelt)
       common /scrns/ xyz(ldim,lt2)
       common /scruz/ mid(lt2)  ! Target proc id
-      integer, INTENT(in):: elmNum
+      integer, INTENT(in):: nelmNum
       real    pts(ldim,npts)
       integer i
 
-      if(nid.eq.0)write(6,*)"Load elm ElmNum Inc",elmNum
       !load pnts
       do i=1,lx1*ly1*lz1
-         pts(1,i)=xm1(i,1,1,elmNum)
-         pts(2,i)=ym1(i,1,1,elmNum)
-         pts(3,i)=1.0-zm1(i,1,1,elmNum)
+         pts(1,i)=xm1(i,1,1,nelmNum)
+         pts(2,i)=ym1(i,1,1,nelmNum)
+         pts(3,i)=1.0-zm1(i,1,1,nelmNum)
       end do
 
 
