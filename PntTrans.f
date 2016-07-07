@@ -87,7 +87,10 @@ c
 c     BEGIN ELEMENT BASED LOOP
 c
       do while (elmNum.le.nelt.and.iEnd.eq.0)
-
+      if(nid.eq.0)then
+         write(6,*),"Elm num",elmNum-1,"of",nelt,"iEnd equals",iend
+      end if
+      call exitt
         call load_element(pts,npts,npoints,elmNum)
 
       
