@@ -171,7 +171,7 @@ c     npts=local count; npoints=total count
       parameter (lt2=2*lx1*ly1*lz1*lelt)
       common /scrns/ xyz(ldim,lt2)
       common /scruz/ mid(lt2)  ! Target proc id
-      integer i
+      integer i, elmNum
       real    pts(ldim,npts)
 
       if(nid.eq.0)write(6,*)"Load elm ElmNum Inc",elmNum
