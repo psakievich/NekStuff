@@ -1441,6 +1441,7 @@ c     Save initial parameter
             p95   = param(95)
             p14   = param(14)
         ENDIF
+            param(14)=0.0
 
         DT    = 3.E-03
         param(12) = -DT
