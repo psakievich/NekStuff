@@ -1,0 +1,41 @@
+C**********************************************************************
+C   VARIABLES USED IN MYFFT ROUTINE
+C**********************************************************************
+      include "fftw3.f" !lib with FFTW type definitions
+C*****COMMON BLOCK FOR INTEGERS****************************************
+      ! Variable names and definitions
+C----------------------------------------------------------------------  
+        !Number of processors that will use FFT
+      integer, parameter::nFFTProcs=32                   
+        !Local sampling of field (any FFT dim must span global domain)
+      integer, parameter::nFFTlx1=1,nFFTly1=16,nFFTlz1=1
+        !Total number of points in the local FFT domain
+      integer, parameter::nFFTtotal=nFFTlx1*nFFTly1*nFFTlz1 
+        !Directions to perform FFT (only 1 for now)
+      integer, parameter::nFFTdir1=2
+        !Number of fields to perform FFT on
+      integer, parameter::nFFTflds=ldim !+ldimt+1                    
+      
+C----------------------------------------------------------------------      
+      COMMON /INTMYFFT/ nFFTProcs, nFFTlx1, nFFTly1, nFFTlz1, nFFTdir1,
+     $ nFFTtotal, nFFTflds 
+C----------------------------------------------------------------------
+
+     
+C*****COMMON BLOCK FOR REALS*******************************************
+      ! Variable names and definitions
+C----------------------------------------------------------------------
+        !Spatial localtion of points for interpolated values
+      real rFFTpts(ldim,nFFTtotal) 
+      
+C----------------------------------------------------------------------
+      COMMON /REALMYFFT/ rFFTpts(ldim,nFFTtotal)
+C----------------------------------------------------------------------      
+      
+C*****COMMON BLOCK FOR COMPLEX*****************************************
+      ! Variable names and definitions    
+C----------------------------------------------------------------------
+      complex cFFTvals(nFFTflds,nFFTfotal)
+C----------------------------------------------------------------------
+      COMMON /COMPMYFFT/ cFFTvals(nFFTflds,nFFTtotal)
+C----------------------------------------------------------------------
