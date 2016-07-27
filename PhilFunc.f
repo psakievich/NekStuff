@@ -1473,7 +1473,7 @@ C      MYCOURNO = mycfl*DT
             DT = DTMAX
          ENDIF
       ENDIF
-  101
+  101 continue
 c      write(6,*) 'DTCALC',istep,dt,myctarg,mycourno,DT_TEMP
 
 c     Synchronize time step for multiple sessions
