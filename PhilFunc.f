@@ -1411,3 +1411,92 @@ c***********************************************************************
       !call prepost(.true.,'FLP')
       call exitt
       end subroutine
+c-----------------------------------------------------------------------
+       subroutine ps_usr_dt
+
+c     Change timestep if courno exceeds specified limits
+
+       include 'SIZE'
+       include 'TOTAL'
+
+      common /orthbi/ nprv(2)
+
+      real dtmax,p93,p94,p95,p14
+      save dtmax,p93,p94,p95.p14
+
+      real mycourno,dtprev,mycmax,mycmin,myctarg,dt_temp
+      real mycfl
+
+
+      MYCTARG = 0.8
+      MYCMAX  = 0.92
+      MYCMIN  = 0.64
+
+c     Save initial parameter
+      IF (istep.le.10) THEN
+         IF (istep.eq.0) THEN
+            DTMAX = abs(param(12))
+            p93   = param(93)
+            p94   = param(94)
+            p95   = param(95)
+            p14   = param(14)
+        ENDIF
+
+        DT    = 1E-06
+        param(12) = -DT
+        return
+      ENDIF
+
+
+      call compute_cfl(MYCOURNO,vx,vy,vz,DT)
+C      call compute_ale_cfl(mycfl,vx,vy,vz,wx,wy,wz,1.0)
+C      MYCOURNO = mycfl*DT
+      IF (nid.eq.0) write(6,28) istep,time,"C=",mycourno,
+     $    'My CFL ',session
+   28  format(i7,1p1e14.7,2x,a3,2x,0p1F7.3,2x,a7,2x,a7)
+
+      DTPREV = DT
+
+      IF(MYCOURNO.lt.1e-3)then
+         DT=DTPREV*2.0
+         param(14)=0
+         go to 101
+      else
+         param(14)=p14
+      END IF
+
+      IF (MYCOURNO.GE.MYCMAX .OR. MYCOURNO.LE.MYCMIN) THEN
+         DT_TEMP=DT*(MYCTARG/MYCOURNO)
+         IF (DT_TEMP.LT.DTMAX) THEN
+            DT = DT_TEMP
+         ELSE
+            DT = DTMAX
+         ENDIF
+      ENDIF
+ 101
+c      write(6,*) 'DTCALC',istep,dt,myctarg,mycourno,DT_TEMP
+
+c     Synchronize time step for multiple sessions
+      if (ifneknek) dt=uglmin(dt,1)
+
+c     Turn off projection if DT changed
+      IF (ABS(DT-DTPREV).GT.1e-7) THEN
+         param(93) = 0
+         param(94) = 0
+         param(95) = 0
+         p95   = istep
+         nprv(:) = 1
+        IF (NID.eq.0) WRITE(6,39) "Change: DT = ",DT,session
+      ELSE
+         param(93) = p93   ! turn projection back on
+         param(94) = p94
+         param(95) = p95
+      ENDIF
+      param(12) = -DT
+
+
+ 39   FORMAT(A13,1pE14.7,2X,A10)
+
+      return
+      end
+c-----------------------------------------------------------------------
