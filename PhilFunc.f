@@ -1422,7 +1422,7 @@ c     Change timestep if courno exceeds specified limits
       common /orthbi/ nprv(2)
 
       real dtmax,p93,p94,p95,p14
-      save dtmax,p93,p94,p95.p14
+      save dtmax,p93,p94,p95,p14
 
       real mycourno,dtprev,mycmax,mycmin,myctarg,dt_temp
       real mycfl
@@ -1473,7 +1473,7 @@ C      MYCOURNO = mycfl*DT
             DT = DTMAX
          ENDIF
       ENDIF
- 101
+  101
 c      write(6,*) 'DTCALC',istep,dt,myctarg,mycourno,DT_TEMP
 
 c     Synchronize time step for multiple sessions
