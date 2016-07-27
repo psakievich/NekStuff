@@ -1433,7 +1433,7 @@ c     Change timestep if courno exceeds specified limits
       MYCMIN  = 0.64
 
 c     Save initial parameter
-      IF (istep.le.10) THEN
+      IF (istep.le.5) THEN
          IF (istep.eq.0) THEN
             DTMAX = abs(param(12))
             p93   = param(93)
@@ -1442,7 +1442,7 @@ c     Save initial parameter
             p14   = param(14)
         ENDIF
 
-        DT    = 1E-06
+        DT    = 3.E-03
         param(12) = -DT
         return
       ENDIF
