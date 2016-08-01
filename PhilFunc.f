@@ -1428,9 +1428,9 @@ c     Change timestep if courno exceeds specified limits
       real mycfl
 
 
-      MYCTARG = 0.8
-      MYCMAX  = 0.92
-      MYCMIN  = 0.64
+      MYCTARG = 0.7
+      MYCMAX  = 0.8
+      MYCMIN  = 0.6
 
 c     Save initial parameter
       IF (istep.le.5) THEN
