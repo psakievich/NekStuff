@@ -131,7 +131,7 @@ c
          vy(i,1,1,nelmNum)=fieldout(2,i)
          vz(i,1,1,nelmNum)=-fieldout(3,i)
          pm1(i,1,1,nelmNum)=-fieldout(4,i)
-         t(i,1,1,nelmNum,1)=1.0-fieldout(5,i)
+         t(i,1,1,nelmNum,1)=-fieldout(5,i)
       end do
 
       if(nelmNum.lt.nelt) then
