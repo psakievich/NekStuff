@@ -171,7 +171,7 @@ c     npts=local count; npoints=total count
       do i=1,lx1*ly1*lz1
          pts(1,i)=xm1(i,1,1,nelmNum)
          pts(2,i)=ym1(i,1,1,nelmNum)
-         pts(3,i)=1.0-zm1(i,1,1,nelmNum)
+         pts(3,i)=-zm1(i,1,1,nelmNum)
       end do
 
 
