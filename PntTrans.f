@@ -131,7 +131,7 @@ c
          vy(i,1,1,nelmNum)=fieldout(2,i)
          vz(i,1,1,nelmNum)=-fieldout(3,i)
          pm1(i,1,1,nelmNum)=-fieldout(4,i)
-         t(i,1,1,nelmNum,1)=-fieldout(5,i)
+         t(i,1,1,nelmNum,1)=1.0-fieldout(5,i)
       end do
 
       if(nelmNum.lt.nelt) then
@@ -171,7 +171,7 @@ c     npts=local count; npoints=total count
       do i=1,lx1*ly1*lz1
          pts(1,i)=xm1(i,1,1,nelmNum)
          pts(2,i)=ym1(i,1,1,nelmNum)
-         pts(3,i)=-zm1(i,1,1,nelmNum)
+         pts(3,i)=1.0-zm1(i,1,1,nelmNum)
       end do
 
 
