@@ -4,7 +4,7 @@ c FOR TRANSFORMATIONS OF GRID
 c   
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
-      subroutine SymFlip()
+      subroutine SymFlip(symConstant)
 c    ********************************************
 c    ***** MODIFIED VERSION OF HPTS IN REPO******
 c     flips all fields about the mid plane of the simulation
@@ -37,7 +37,7 @@ c     ASSUMING LHIS IS MAX NUMBER OF POINTS TO READ IN ON ONE PROCESSOR
       character*3    prefix
 
       logical iffind
-
+      real symConstant
       integer icalld,npoints,npts,nelmNum
       integer iEnd,iEndTotal
       save    icalld,npoints,npts
@@ -86,7 +86,7 @@ c     BEGIN ELEMENT BASED LOOP
 c
       do while (nelmNum.le.nelt.and.iEnd.eq.0)
 
-        call load_element(pts,npts,npoints,nelmNum)
+        call load_element(pts,npts,npoints,nelmNum,symConstant)
       
       ! interpolate
         call findpts(inth_hpts,rcode,1,
@@ -131,7 +131,7 @@ c
          vy(i,1,1,nelmNum)=fieldout(2,i)
          vz(i,1,1,nelmNum)=-fieldout(3,i)
          pm1(i,1,1,nelmNum)=-fieldout(4,i)
-         t(i,1,1,nelmNum,1)=1.0-fieldout(5,i)
+         t(i,1,1,nelmNum,1)=symConstant-fieldout(5,i)
       end do
 
       if(nelmNum.lt.nelt) then
@@ -153,7 +153,7 @@ c
       return
       end
 c-----------------------------------------------------------------------
-      subroutine load_element(pts,npts,npoints,nelmNum)
+      subroutine load_element(pts,npts,npoints,nelmNum,symConstant)
 c     npts=local count; npoints=total count
 
       include 'SIZE'
@@ -165,13 +165,14 @@ c     npts=local count; npoints=total count
       common /scruz/ mid(lt2)  ! Target proc id
       integer, INTENT(in):: nelmNum
       real    pts(ldim,npts)
+      real    symConstant
       integer i
 
       !load pnts
       do i=1,lx1*ly1*lz1
          pts(1,i)=xm1(i,1,1,nelmNum)
          pts(2,i)=ym1(i,1,1,nelmNum)
-         pts(3,i)=1.0-zm1(i,1,1,nelmNum)
+         pts(3,i)=symConstant-zm1(i,1,1,nelmNum)
       end do
 
 
