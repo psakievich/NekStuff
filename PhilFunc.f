@@ -1359,10 +1359,10 @@ c******************************************************************************
         rEMax=1.e-10
         do i=1,lx1*ly1
            rTest=sqrt(xm1(i,1,f,e)**2+ym1(i,1,f,e)**2)
-           if rTest<rEmin then
+           if rTest.lt.rEmin then
               rEmin=rTest
            endif
-           if rTest>rEmax then
+           if rTest.gt.rEmax then
               rEmax=rTest
            endif
         end do
@@ -1421,10 +1421,10 @@ c******************************************************************************
         rEMax=1.e-10
         do i=1,lx1*ly1
            rTest=sqrt(xm1(i,1,f,e)**2+ym1(i,1,f,e)**2)
-           if rTest<rEmin then
+           if rTest.lt.rEmin then
               rEmin=rTest
            endif
-           if rTest>rEmax then
+           if rTest.gt.rEmax then
               rEmax=rTest
            endif
         end do
