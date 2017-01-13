@@ -1368,6 +1368,7 @@ c******************************************************************************
         end do
       !---Process if it is in the correct bounds
         if (rEmax.le.rGmax) then
+          write(6,*) 'In bounds',nid,e,rEmax,rGmax
       !---March over horizontal planes of face
           do k=1,nz1
       !-----Find the appropriate height
