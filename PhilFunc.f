@@ -1305,6 +1305,178 @@ c      endif
          close(10)
       endif
       end
+c******************************************************************************
+      subroutine ps_PartialPlanarAverage(iter,pwr,prefix,rGmin,rGmax)
+      include 'SIZE'
+      include 'TOTAL'
+      include 'mpif.h'
+      common /nekmpi/ nid_,np_,nekcomm,nekgroup,nekreal
+      common /myzval/ zval,zvaltol
+      common /mystuff/ tx(lx1,ly1,lz1,lelt)
+     $                , ty(lx1,ly1,lz1,lelt)
+     $                , tz(lx1,ly1,lz1,lelt)
+      integer,parameter:: levels=24*(lz1-1)+1
+      real*8:: zvaltol
+      real*8,dimension(levels)::zval
+      real*8:: rGmin,rGmax,rEmin,rEmax,rTest
+      real,dimension(levels,7)::scalar,tempScalar
+      real,dimension(levels,1)::flucs,tempFlucs
+      real,dimension(levels):: wght,tempWght
+      real::myWght,dTheta
+      integer::e,i,j,k,ii,n,nt
+      integer::f,nflds,nflucs,iter,pwr
+      character*80 filename
+      character*3  prefix
+
+      n=nx1*ny1*nz1*nelv
+      nt=nx1*ny1*nz1*nelt
+      nflds=7
+      nflucs=1
+
+      do i=1,levels
+      do j=1,nflds
+      scalar(i,j)=0.
+      tempScalar(i,j)=0.
+      enddo
+      wght(i)=0.
+      tempWght(i)=0.
+      enddo
+
+      do i=1,levels
+      do j=1,nflucs
+      flucs(i,j)=0.
+      tempFlucs(i,j)=0.
+      enddo
+      enddo
+      do e=1,nelv
+      !---Find the desired face via normal
+        f=1
+        do while(unz(1,1,f,e).ne.-1.0.and.f.lt.6)
+          f=f+1
+        enddo
+      !---Determine if element is in desired range
+        rEmin=1.e10
+        rEMax=1.e-10
+        do i=1,lx1*ly1
+           rTest=sqrt(xm1(i,1,f,e)**2+ym1(i,1,f,e)**2)
+           if rTest<rEmin then
+              rEmin=rTest
+           endif
+           if rTest>rEmax then
+              rEmax=rTest
+           endif
+        end do
+      !---Process if it is in the correct bounds
+        if rEmin.ge.rGmin.and.rEmax.le.rGmax then
+      !---March over horizontal planes of face
+          do k=1,nz1
+      !-----Find the appropriate height
+            ii=1
+            do while(abs(zval(ii)-zm1(1,1,k,e))
+     $                .gt.zvaltol.and.ii.lt.levels)
+               ii=ii+1
+            enddo
+
+      !-----March over the face and weight the points
+            do i=1,nx1*ny1
+             if(xm1(i,1,k,e).ne.0.)then
+                dTheta=atan(ym1(i,1,k,e)/xm1(i,1,k,e))
+             else
+                dTheta=0.
+             endif
+             myWght=area(i,1,f,e)
+             wght(ii)=wght(ii)+myWght
+             scalar(ii,1)=scalar(ii,1)+(vx(i,1,k,e)*cos(dTheta)
+     $                   +vy(i,1,k,e)*sin(dTheta))**pwr*myWght
+             scalar(ii,2)=scalar(ii,2)+vz(i,1,k,e)**pwr*myWght
+             scalar(ii,3)=scalar(ii,3)+t(i,1,k,e,1)**pwr*myWght
+             scalar(ii,4)=scalar(ii,4)+t(i,1,k,e,2)**pwr*myWght
+             scalar(ii,5)=scalar(ii,5)+t(i,1,k,e,3)**pwr*myWght
+             scalar(ii,6)=scalar(ii,6)+(t(i,1,k,e,1)*
+     $                                 vz(i,1,k,e))**pwr*myWght
+             scalar(ii,7)=scalar(ii,7)+tz(i,1,k,e)**pwr*myWght
+            enddo!--i-loop
+          enddo!--k-loop
+        endif!--if-in-range
+      enddo!---e-loop
+      !---Sum over procesors
+      call gop(scalar,tempScalar,'+  ',levels*nflds)
+      call gop(wght,tempWght,'+  ',levels)
+      call nekgsync
+      !---Area average
+      do j=1,nflds
+      do i=1,levels
+          scalar(i,j)=scalar(i,j)/wght(i)
+      enddo
+      enddo
+      !----Compute Fluctuations
+      do e=1,nelv
+      !---Find the desired face via normal
+        f=1
+        do while(unz(1,1,f,e).ne.-1.0.and.f.lt.6)
+          f=f+1
+        enddo
+      !---Determine if element is in desired range
+        rEmin=1.e10
+        rEMax=1.e-10
+        do i=1,lx1*ly1
+           rTest=sqrt(xm1(i,1,f,e)**2+ym1(i,1,f,e)**2)
+           if rTest<rEmin then
+              rEmin=rTest
+           endif
+           if rTest>rEmax then
+              rEmax=rTest
+           endif
+        end do
+      !---Process if it is in the correct bounds
+        if rEmin.ge.rGmin.and.rEmax.le.rGmax then
+      !---March over horizontal planes of face
+          do k=1,nz1
+      !-----Find the appropriate height
+            ii=1
+            do while(abs(zval(ii)-zm1(1,1,k,e))
+     $                .gt.zvaltol.and.ii.lt.levels)
+               ii=ii+1
+            enddo
+      !-----March over the face and weight the points
+      !---!!!MAKE SURE YOU DOUBLE CHECK SIGNS ON MEAN PROFILE!!!
+            do i=1,nx1*ny1
+             myWght=area(i,1,f,e)
+             flucs(ii,1)=flucs(ii,1)+(t(i,1,k,e,1)-scalar(ii,3)**
+     $                         (1.0/dble(pwr)))**pwr*myWght
+             enddo!--i-loop
+          enddo!--k-loop
+        end if!--if condition
+      enddo!---e-loop
+
+      !---Sum over processors
+      call gop(flucs,tempFlucs,'+  ',levels*nflucs)
+      call nekgsync
+      !---Area average
+      do j=1,nflucs
+      do i=1,levels
+          flucs(i,j)=flucs(i,j)/wght(i)
+      enddo
+      enddo
+      !----Dump to File
+      if(nid.eq.0)then
+         write(filename,"(A3,'prof',I0,'.dat')")prefix,iter
+         open(unit=10,file=filename)
+         do i=1,levels
+            write(10,*)        zval(i)
+     $                        ,scalar(i,1)
+     $                        ,scalar(i,2)
+     $                        ,scalar(i,3)
+     $                        ,scalar(i,4)
+     $                        ,scalar(i,5)
+     $                        ,scalar(i,6)
+     $                        ,scalar(i,7)
+     $                        ,flucs(i,1)
+     $                        ,wght(i)
+         enddo
+         close(10)
+      endif
+      end
 c***********************************************************************
       subroutine psLoadProfile(dProfile,chFilename)
       !PARAMETERS
