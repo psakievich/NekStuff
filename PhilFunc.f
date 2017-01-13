@@ -1359,15 +1359,15 @@ c******************************************************************************
         rEMax=1.e-10
         do i=1,lx1*ly1
            rTest=sqrt(xm1(i,1,f,e)**2+ym1(i,1,f,e)**2)
-           if rTest.lt.rEmin then
+           if (rTest.lt.rEmin) then
               rEmin=rTest
            endif
-           if rTest.gt.rEmax then
+           if (rTest.gt.rEmax) then
               rEmax=rTest
            endif
         end do
       !---Process if it is in the correct bounds
-        if rEmin.ge.rGmin.and.rEmax.le.rGmax then
+        if (rEmin.ge.rGmin.and.rEmax.le.rGmax) then
       !---March over horizontal planes of face
           do k=1,nz1
       !-----Find the appropriate height
@@ -1421,15 +1421,15 @@ c******************************************************************************
         rEMax=1.e-10
         do i=1,lx1*ly1
            rTest=sqrt(xm1(i,1,f,e)**2+ym1(i,1,f,e)**2)
-           if rTest.lt.rEmin then
+           if (rTest.lt.rEmin) then
               rEmin=rTest
            endif
-           if rTest.gt.rEmax then
+           if (rTest.gt.rEmax) then
               rEmax=rTest
            endif
         end do
       !---Process if it is in the correct bounds
-        if rEmin.ge.rGmin.and.rEmax.le.rGmax then
+        if (rEmin.ge.rGmin.and.rEmax.le.rGmax) then
       !---March over horizontal planes of face
           do k=1,nz1
       !-----Find the appropriate height
