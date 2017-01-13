@@ -1367,7 +1367,7 @@ c******************************************************************************
            endif
         end do
       !---Process if it is in the correct bounds
-        if (rEmin.ge.rGmin.and.rEmax.le.rGmax) then
+        if (rEmax.le.rGmax) then
       !---March over horizontal planes of face
           do k=1,nz1
       !-----Find the appropriate height
@@ -1429,7 +1429,7 @@ c******************************************************************************
            endif
         end do
       !---Process if it is in the correct bounds
-        if (rEmin.ge.rGmin.and.rEmax.le.rGmax) then
+        if (rEmax.le.rGmax) then
       !---March over horizontal planes of face
           do k=1,nz1
       !-----Find the appropriate height
